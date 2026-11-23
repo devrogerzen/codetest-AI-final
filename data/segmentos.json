@@ -1,0 +1,12 @@
+{
+  "cobro_doble": {
+    "descripcion": "clientes a los que se les cobró dos veces durante el incidente de pagos del 14/10/2026",
+    "clientes": 312,
+    "ticket_promedio": 6800
+  },
+  "pedidos_demorados": {
+    "descripcion": "clientes cuyo pedido quedó en estado 'procesando' durante el incidente del 14/10/2026",
+    "clientes": 1240,
+    "ticket_promedio": 7100
+  }
+}

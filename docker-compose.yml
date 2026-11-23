@@ -1,0 +1,62 @@
+# Infraestructura local: Redis (estado de los jobs + checkpoints de LangGraph) y Arize Phoenix (trazas).
+#   docker compose up -d            -> levanta redis y phoenix
+#   docker compose --profile api up -d --build   -> además levanta la API en un contenedor
+services:
+  redis:
+    # Redis Stack trae RedisJSON y RediSearch, que usa langgraph-checkpoint-redis para guardar los checkpoints
+    image: redis/redis-stack-server:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    ports:
+      - "6006:6006"   # interfaz web + colector OTLP por HTTP (/v1/traces)
+      - "4317:4317"   # colector OTLP por gRPC
+    volumes:
+      - phoenix-data:/mnt/data
+    environment:
+      - PHOENIX_WORKING_DIR=/mnt/data
+      # Phoenix 21 trae autenticación activada por defecto: en local la apagamos para que el colector
+      # acepte las trazas sin API key. En un despliegue real se deja activada y se usa PHOENIX_API_KEY.
+      - PHOENIX_ENABLE_AUTH=false
+      - PHOENIX_TELEMETRY_ENABLED=false
+
+  api:
+    profiles: ["api"]
+    build: .
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
+      - WORKERS=0          # la API solo recibe pedidos; el trabajo lo hace el servicio worker
+    depends_on:
+      redis:
+        condition: service_healthy
+      phoenix:
+        condition: service_started
+
+  worker:
+    profiles: ["api"]
+    build: .
+    command: ["python", "-m", "app.worker", "--workers", "3"]
+    env_file: .env
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  redis-data:
+  phoenix-data:
