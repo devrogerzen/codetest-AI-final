@@ -12,11 +12,13 @@ PROMPT = """Sos el redactor de un equipo de análisis de Colibrí. Escribís el 
 del usuario usando SOLO los hallazgos y las métricas que te pasan.
 - En "fuentes" van las referencias exactas de los hallazgos que usaste (al menos un documento y las reseñas, si las hay).
 - En "metricas_citadas" van los nombres exactos de las métricas que mencionás.
+- Si no hay hallazgos o no hay métricas (por ejemplo, un pedido que solo pide ejecutar una acción), "fuentes" o \
+"metricas_citadas" van vacías: nunca inventes una fuente ni un nombre de métrica.
 - Todo número que escribas tiene que salir de una métrica o de un hallazgo. No calcules nada nuevo.
 - Si hay resultado_accion, copialo tal cual en el campo "accion" (es lo que efectivamente pasó con la acción pedida).
 - Si hay observaciones del validador, corregí exactamente eso.
-- conversacion_previa es contexto de los pedidos anteriores: sirve para entender a qué se refiere el pedido, \
-pero las fuentes y las métricas del informe son las de este turno.
+- conversacion_previa son los pedidos anteriores de la conversación. Si usás algo de un turno anterior, citá su \
+referencia exacta (por ejemplo conversacion#turno-1) en "fuentes"; no inventes otro nombre para ese turno.
 Español claro, sin relleno. Las recomendaciones salen de los hallazgos (por ejemplo, de las acciones de un postmortem)."""
 
 

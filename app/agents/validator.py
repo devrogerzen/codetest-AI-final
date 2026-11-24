@@ -28,11 +28,14 @@ def problemas_del_informe(state: EstadoOrquestador) -> list[str]:
         return ["No hay informe."]
     problemas: list[str] = []
     referencias = {h.referencia: h.tipo for h in state["hallazgos"]}
+    turnos_previos = {t.referencia for t in state.get("historial", []) if t.referencia}
     nombres = {m.nombre for m in state["metricas"]}
 
     for fuente in informe.fuentes:
-        if fuente not in referencias:
-            problemas.append(f"La fuente '{fuente}' no está entre los hallazgos.")
+        if fuente not in referencias and fuente not in turnos_previos:
+            validas = sorted(referencias) + sorted(turnos_previos)
+            problemas.append(f"La fuente '{fuente}' no está entre los hallazgos ni es un turno anterior. "
+                             f"Fuentes válidas: {', '.join(validas) or 'ninguna (dejá fuentes vacía)'}.")
     tipos_citados = {referencias[f] for f in informe.fuentes if f in referencias}
     for tipo in set(referencias.values()) - tipos_citados:
         problemas.append(f"El informe no cita ninguna fuente de tipo '{tipo}'.")

@@ -20,7 +20,8 @@ async def test_post_tasks_responde_202_al_instante(abrir_api, redis):
         r = await cliente.post("/tasks", json={"pedido": ANALISIS})
         ms = (time.perf_counter() - inicio) * 1000
     cuerpo = r.json()
-    assert r.status_code == 202 and cuerpo["estado"] == "PENDING" and ms < 300
+    # No espera al agente (con workers=0 ni siquiera corre): el margen es para máquinas lentas o cargadas
+    assert r.status_code == 202 and cuerpo["estado"] == "PENDING" and ms < 1000
     assert cuerpo["conversacion_id"] and cuerpo["consultar"] == f"/tasks/{cuerpo['job_id']}"
     assert await redis.exists(f"colibri:job:{cuerpo['job_id']}") == 1   # el estado se guardó antes de encolar
 

@@ -39,6 +39,31 @@ def test_una_metrica_inexistente_se_rechaza():
     assert any("promedio[otro]" in p for p in problemas)
 
 
+def test_sin_hallazgos_el_informe_va_sin_fuentes():
+    """Un pedido que solo pide una acción no investiga nada: el informe no cita fuentes, y si inventa una, se rechaza."""
+    accion = "Se enviaron 312 cupones del 2% (costo estimado $42.432), aprobados automáticamente."
+    sin_nada = estado(hallazgos=[], metricas=[], resultado_accion=accion)
+    limpio = informe(resumen="Se enviaron 312 cupones del 2%.", hallazgos=["Compensación enviada"], metricas_citadas=[],
+                     fuentes=[], accion=accion)
+    assert problemas_del_informe(sin_nada | {"informe": limpio}) == []
+    inventado = limpio.model_copy(update={"fuentes": ["Log de ejecución de compensación"]})
+    assert any("Log de ejecución" in p for p in problemas_del_informe(sin_nada | {"informe": inventado}))
+
+
+def test_un_turno_anterior_es_una_fuente_valida():
+    """En el segundo turno no hace falta volver a investigar: el informe puede citar el turno anterior."""
+    anterior = Turno(referencia="conversacion#turno-1", pedido="¿Qué pasó?", titulo="Incidente",
+                     resumen="312 clientes con cobro doble.")
+    accion = "Se enviaron 312 cupones del 10% (costo estimado $212.160)."
+    segundo = estado(hallazgos=[], metricas=[], resultado_accion=accion, historial=[anterior])
+    citando = informe(resumen="Se enviaron 312 cupones del 10%.", hallazgos=["Compensación enviada"],
+                      metricas_citadas=[], fuentes=["conversacion#turno-1"], accion=accion)
+    assert problemas_del_informe(segundo | {"informe": citando}) == []
+    otro_nombre = citando.model_copy(update={"fuentes": ["Informe del incidente del 14/10"]})
+    problemas = problemas_del_informe(segundo | {"informe": otro_nombre})
+    assert problemas and "conversacion#turno-1" in problemas[0]   # el mensaje dice cuáles son las fuentes válidas
+
+
 def test_los_numeros_de_un_turno_anterior_valen():
     anterior = Turno(pedido="p", titulo="t", resumen="Se compensó a 1.240 clientes con pedidos demorados.")
     texto = "El promedio bajó de 4.36 a 2.44; antes se habló de 1.240 pedidos demorados y 312 cobros dobles."

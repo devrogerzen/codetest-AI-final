@@ -3,6 +3,7 @@ fallas y reinicios."""
 import asyncio
 import time
 
+from app.agents.supervisor import pide_accion
 from app.config import ENVIOS
 from app.graph import crear_modelos
 from app.modelo_simulado import ModeloSimulado
@@ -24,6 +25,15 @@ class SupervisorInsistente(ModeloSimulado):
     def _supervisor(self, estado: dict):
         if estado["resultado_accion"] and not estado["informe"]:
             return DecisionSupervisor(siguiente="operador", instruccion="Volvé a proponer el cupón.", motivo="Insiste.")
+        return super()._supervisor(estado)
+
+
+class SupervisorQueQuiereActuar(ModeloSimulado):
+    """Como Gemini en una corrida real: con las métricas listas, propone una compensación que nadie pidió."""
+    def _supervisor(self, estado: dict):
+        if estado["metricas"] and not estado["informe"] and not estado["resultado_accion"]:
+            return DecisionSupervisor(siguiente="operador", motivo="Conviene compensar.",
+                                      instruccion="Prepará un cupón del 20% a los clientes con cobro doble.")
         return super()._supervisor(estado)
 
 
@@ -103,6 +113,22 @@ async def test_accion_rechazada_no_se_vuelve_a_proponer(abrir_api, redis):
         job = await esperar(cliente, job_id, {"DONE", "FAILED", "WAITING_APPROVAL"})
     assert job["estado"] == "DONE"
     assert job["recorrido"].count("aprobacion_humana") == 1
+    assert await redis.llen(ENVIOS) == 0
+
+
+def test_que_pedidos_piden_una_accion():
+    assert pide_accion(CUPON_10) and pide_accion(CUPON_5_DEMORADOS)
+    assert pide_accion("Mandales a los clientes con cobro doble el cupón que recomienda el postmortem.")
+    assert not pide_accion(ANALISIS)
+    assert not pide_accion("¿Qué deberíamos hacer con los clientes afectados?")
+    assert not pide_accion("¿Qué acción se tomó con esos clientes y cuánto costó?")
+
+
+async def test_si_el_pedido_solo_pregunta_no_se_ejecuta_ninguna_accion(abrir_api, redis):
+    async with abrir_api(modelos_con(SupervisorQueQuiereActuar(rol="supervisor"))) as cliente:
+        job = await esperar(cliente, (await crear(cliente, ANALISIS))["job_id"], {"DONE", "FAILED", "WAITING_APPROVAL"})
+    assert job["estado"] == "DONE" and job["resultado"]["validado"]
+    assert "operador" not in job["recorrido"]   # la guarda de mínimo privilegio lo mandó al redactor
     assert await redis.llen(ENVIOS) == 0
 
 

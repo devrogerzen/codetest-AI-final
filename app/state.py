@@ -71,13 +71,16 @@ class Informe(BaseModel):
     resumen: str = Field(description="La respuesta al pedido en dos o tres oraciones")
     hallazgos: list[str] = Field(min_length=1)
     metricas_citadas: list[str] = Field(description="Nombres exactos de las métricas usadas, tal como están en el estado")
-    fuentes: list[str] = Field(min_length=1, description="Referencias exactas de los hallazgos usados")
+    fuentes: list[str] = Field(default_factory=list,
+                               description="Referencias exactas de los hallazgos usados (vacía solo si no hay hallazgos)")
     recomendaciones: list[str] = Field(default_factory=list)
     accion: str | None = Field(default=None, description="Qué pasó con la acción pedida, si hubo una (copiá resultado_accion)")
 
 
 class Turno(BaseModel):
-    """Un pedido ya resuelto de la conversación: lo que ve el supervisor en el turno siguiente."""
+    """Un pedido ya resuelto de la conversación: lo que ve el supervisor en el turno siguiente. Su referencia
+    (conversacion#turno-N) es una fuente válida para el informe de un turno posterior."""
+    referencia: str = ""
     pedido: str
     titulo: str
     resumen: str

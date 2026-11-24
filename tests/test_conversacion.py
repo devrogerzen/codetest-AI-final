@@ -37,6 +37,7 @@ async def test_dos_turnos_comparten_memoria(abrir_api):
     # Lo propio de cada turno arranca de cero: el registro de aportes vuelve a empezar en el paso 1
     assert job2["resultado"]["aportes"][0]["paso"] == 1
     assert [t["pedido"] for t in respuesta["turnos"]] == [ANALISIS, SEGUIMIENTO]
+    assert [t["referencia"] for t in respuesta["turnos"]] == ["conversacion#turno-1", "conversacion#turno-2"]
     assert respuesta["jobs"] == [primero["job_id"], segundo["job_id"]]
 
 
