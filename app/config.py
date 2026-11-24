@@ -129,8 +129,11 @@ def nombre_modelo(modelo: BaseChatModel) -> str:
 
 
 def proveedor_embeddings() -> str:
-    """local (sin key), google u openai. Anthropic no tiene embeddings: con LLM_PROVIDER=anthropic hay que elegir otro."""
-    return env("EMBEDDINGS_PROVIDER", "local" if SIN_API else proveedor_llm()).lower()
+    """local (sin key), google u openai. Anthropic no tiene embeddings: con LLM_PROVIDER=anthropic hay que elegir otro.
+    Con SIN_API=1 siempre son locales: el modo sin key no puede depender de ninguna key."""
+    if SIN_API:
+        return "local"
+    return env("EMBEDDINGS_PROVIDER", proveedor_llm()).lower()
 
 
 def crear_embeddings() -> Embeddings:
