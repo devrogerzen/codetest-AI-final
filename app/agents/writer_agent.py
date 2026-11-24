@@ -5,6 +5,7 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from app.agents.comun import a_json, siguiente_paso
+from app.config import TURNOS_DE_CONTEXTO
 from app.state import Aporte, EstadoOrquestador, Informe
 
 PROMPT = """Sos el redactor de un equipo de análisis de Colibrí. Escribís el informe final para el pedido \
@@ -14,6 +15,8 @@ del usuario usando SOLO los hallazgos y las métricas que te pasan.
 - Todo número que escribas tiene que salir de una métrica o de un hallazgo. No calcules nada nuevo.
 - Si hay resultado_accion, copialo tal cual en el campo "accion" (es lo que efectivamente pasó con la acción pedida).
 - Si hay observaciones del validador, corregí exactamente eso.
+- conversacion_previa es contexto de los pedidos anteriores: sirve para entender a qué se refiere el pedido, \
+pero las fuentes y las métricas del informe son las de este turno.
 Español claro, sin relleno. Las recomendaciones salen de los hallazgos (por ejemplo, de las acciones de un postmortem)."""
 
 
@@ -24,6 +27,7 @@ def crear_redactor(modelo: BaseChatModel):
         datos = {
             "pedido": state["pedido"],
             "instruccion": state["instruccion"],
+            "conversacion_previa": [t.model_dump(exclude_none=True) for t in state.get("historial", [])[-TURNOS_DE_CONTEXTO:]],
             "hallazgos": [{"tipo": h.tipo, "referencia": h.referencia, "contenido": h.contenido} for h in state["hallazgos"]],
             "metricas": [m.model_dump() for m in state["metricas"]],
             "resultado_accion": state["resultado_accion"],

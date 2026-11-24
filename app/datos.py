@@ -1,79 +1,15 @@
-"""Fuentes de datos: la documentación de Colibrí (la de las pre-entregas 3 y 4 más el postmortem
-del incidente de pagos) y las reseñas de clientes.
+"""Reseñas de clientes de Colibrí y el análisis de sentimiento que usa el analista.
 
-La búsqueda es léxica (BM25), sin embeddings: es la "búsqueda simulada sobre la Vector DB de
-pre-entregas anteriores" que permite la consigna, y corre sin API key.
+La documentación ya no vive acá: la busca el RAG (app/rag) en la base vectorial.
 """
 import json
-import math
 import re
-import unicodedata
-from collections import Counter
-from dataclasses import dataclass
 from datetime import date
 from functools import cache
 from typing import Any
 
-from app.config import CONOCIMIENTO, RESENAS
-
-PALABRAS_VACIAS = {
-    "a", "al", "algo", "como", "con", "cual", "de", "del", "el", "en", "es", "esta", "este", "hay",
-    "la", "las", "lo", "los", "mas", "me", "mi", "para", "pero", "por", "que", "qué", "se", "si",
-    "sin", "su", "sus", "un", "una", "uno", "y", "ya", "o", "u", "le", "les", "fue", "son", "ser",
-}
-
-
-def normalizar(texto: str) -> str:
-    sin_acentos = unicodedata.normalize("NFKD", texto)
-    return "".join(c for c in sin_acentos if not unicodedata.combining(c)).lower()
-
-
-def tokenizar(texto: str) -> list[str]:
-    return [t for t in re.findall(r"[a-z0-9_]+", normalizar(texto)) if t not in PALABRAS_VACIAS]
-
-
-@dataclass(frozen=True)
-class Seccion:
-    documento_id: str
-    titulo: str
-    contenido: str
-
-
-@cache
-def cargar_documentacion() -> tuple[Seccion, ...]:
-    """Cada sección (##) de cada Markdown y cada entrada del FAQ es un documento."""
-    secciones: list[Seccion] = []
-    for archivo in sorted(CONOCIMIENTO.glob("*.md")):
-        texto = archivo.read_text(encoding="utf-8")
-        titulo_doc = texto.splitlines()[0].lstrip("# ").strip()
-        for bloque in re.split(r"^## ", texto, flags=re.MULTILINE)[1:]:
-            titulo, _, cuerpo = bloque.partition("\n")
-            slug = re.sub(r"[^a-z0-9]+", "-", normalizar(titulo)).strip("-")
-            secciones.append(Seccion(f"{archivo.name}#{slug}", f"{titulo_doc} > {titulo.strip()}", cuerpo.strip()))
-    for entrada in json.loads((CONOCIMIENTO / "faq.json").read_text(encoding="utf-8")):
-        secciones.append(Seccion(f"faq.json#{entrada['id']}", f"FAQ > {entrada['pregunta']}", entrada["respuesta"]))
-    return tuple(secciones)
-
-
-def buscar_secciones(consulta: str, k: int = 3) -> list[tuple[Seccion, float]]:
-    """BM25 clásico (k1=1.5, b=0.75) sobre título + contenido."""
-    secciones = cargar_documentacion()
-    docs = [tokenizar(f"{s.titulo} {s.contenido}") for s in secciones]
-    largo_medio = sum(map(len, docs)) / len(docs)
-    df = Counter(t for d in docs for t in set(d))
-    puntajes = []
-    for seccion, tokens in zip(secciones, docs):
-        frecuencias = Counter(tokens)
-        puntaje = 0.0
-        for termino in set(tokenizar(consulta)):
-            if termino not in frecuencias:
-                continue
-            idf = math.log(1 + (len(docs) - df[termino] + 0.5) / (df[termino] + 0.5))
-            tf = frecuencias[termino]
-            puntaje += idf * tf * 2.5 / (tf + 1.5 * (0.25 + 0.75 * len(tokens) / largo_medio))
-        if puntaje > 0:
-            puntajes.append((seccion, round(puntaje, 3)))
-    return sorted(puntajes, key=lambda par: par[1], reverse=True)[:k]
+from app.config import RESENAS
+from app.texto import normalizar
 
 
 @cache

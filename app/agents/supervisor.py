@@ -7,14 +7,14 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from app.agents.comun import a_json, siguiente_paso
-from app.config import MAX_DELEGACIONES
-from app.state import Aporte, DecisionSupervisor, EstadoOrquestador
+from app.config import MAX_DELEGACIONES, TURNOS_DE_CONTEXTO
+from app.state import Aporte, DecisionSupervisor, EstadoOrquestador, Turno
 
 PROMPT = """Sos el supervisor de un equipo de análisis de Colibrí, una tienda online. No investigás, no \
 calculás y no redactás: decidís quién trabaja ahora y le das una instrucción concreta.
 
 Especialistas:
-- investigador: busca en la documentación interna (incidentes, postmortems, procesos) y trae reseñas de clientes por período.
+- investigador: busca en la base de conocimiento (incidentes, postmortems, runbooks, arquitectura, seguridad) y trae reseñas de clientes por período.
 - analista: calcula sobre las reseñas que ya trajo el investigador (sentimiento, estadísticas, comparación entre grupos). No busca nada.
 - operador: prepara acciones sobre clientes (por ejemplo, enviar cupones de descuento). Solo las propone: después \
 pasan solas por la aprobación humana y por el ejecutor, y el resultado vuelve como resultado_accion.
@@ -31,13 +31,18 @@ Rúbrica, en orden. Delegá al primero que no se cumpla:
 
 Nunca mandes dos veces al operador por la misma acción: si ya hay resultado_accion (aprobada o rechazada), seguí con el informe.
 
-No repitas una delegación que ya se hizo con la misma instrucción. Las fechas van en formato dd/mm/aaaa."""
+No repitas una delegación que ya se hizo con la misma instrucción. Las fechas van en formato dd/mm/aaaa.
+
+Conversación: si el pedido se apoya en un turno anterior ("esos clientes", "lo que me dijiste", "y ahora..."), \
+usá conversacion_previa para que la instrucción al especialista sea concreta (fechas, segmento, porcentaje). \
+Lo que ya se respondió en un turno anterior no hace falta volver a investigarlo si el pedido no lo pide."""
 
 
 def contexto(state: EstadoOrquestador) -> dict:
     """Lo que ve el supervisor: un resumen del estado, no los mensajes internos de cada especialista."""
     return {
         "pedido": state["pedido"],
+        "conversacion_previa": [t.model_dump(exclude_none=True) for t in state.get("historial", [])[-TURNOS_DE_CONTEXTO:]],
         "delegaciones": f"{state['delegaciones']} de {MAX_DELEGACIONES}",
         "aportes": [f"{a.paso}. {a.agente}: {a.resumen}" for a in state["aportes"]],
         "hallazgos": [{"tipo": h.tipo, "referencia": h.referencia,
@@ -84,6 +89,11 @@ def crear_supervisor(modelo: BaseChatModel):
         }
         if decision.siguiente != "FINALIZAR":
             cambios["delegaciones"] = state["delegaciones"] + 1
+        elif state["informe"]:
+            # El turno queda en la memoria de la conversación (el checkpointer la guarda en Redis)
+            informe = state["informe"]
+            cambios["historial"] = [Turno(pedido=state["pedido"], titulo=informe.titulo, resumen=informe.resumen,
+                                          accion=state["resultado_accion"])]
         return cambios
 
     return supervisor

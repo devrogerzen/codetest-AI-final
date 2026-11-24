@@ -57,6 +57,8 @@ def problemas_del_informe(state: EstadoOrquestador) -> list[str]:
     if state["accion"]:
         permitidos |= _numeros(state["accion"].descripcion) | _formatos(state["accion"].costo_estimado)
     permitidos |= _numeros(resultado or "")
+    for turno in state.get("historial", []):   # turnos anteriores de la conversación, ya validados
+        permitidos |= _numeros(f"{turno.resumen} {turno.accion or ''}")
     texto = " ".join([informe.resumen, *informe.hallazgos])
     inventados = sorted(n for n in _numeros(texto) - permitidos if len(n.split(".")[0]) > 1 or "." in n)
     if inventados:

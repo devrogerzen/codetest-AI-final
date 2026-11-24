@@ -18,8 +18,9 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableLambda
 
 from app.agents.comun import leer_json
-from app.datos import normalizar
+from app.rag.respuestas import NO_LO_SE, RespuestaLLM
 from app.state import DecisionSupervisor, Informe
+from app.texto import normalizar, tokenizar
 
 FECHA = re.compile(r"(\d{2})/(\d{2})/(\d{4})")
 
@@ -45,6 +46,11 @@ def _ultimo_humano(mensajes: Any) -> str:
     return next(m.text for m in reversed(list(mensajes)) if isinstance(m, HumanMessage))
 
 
+def _mensajes(entrada: Any) -> list[BaseMessage]:
+    """Lo que llega a with_structured_output: una lista de mensajes o el valor de un prompt."""
+    return entrada.to_messages() if hasattr(entrada, "to_messages") else list(entrada)
+
+
 def _datos(texto: str) -> Any:
     inicio = min((i for i in (texto.find("{"), texto.find("[")) if i >= 0), default=-1)
     return json.loads(texto[inicio:]) if inicio >= 0 else {}
@@ -61,13 +67,38 @@ class ModeloSimulado(BaseChatModel):
         return self   # las reglas ya conocen las herramientas de su rol
 
     def with_structured_output(self, schema: Any, **kwargs: Any) -> RunnableLambda:
+        if schema is RespuestaLLM:
+            return RunnableLambda(lambda entrada: self._asistente(_ultimo_humano(_mensajes(entrada))))
         reglas = {DecisionSupervisor: self._supervisor, Informe: self._redactor}[schema]
-        return RunnableLambda(lambda mensajes: reglas(_datos(_ultimo_humano(mensajes))))
+        return RunnableLambda(lambda mensajes: reglas(_datos(_ultimo_humano(_mensajes(mensajes)))))
 
     def _generate(self, messages: list[BaseMessage], stop: Any = None, run_manager: Any = None,
                   **kwargs: Any) -> ChatResult:
+        if self.rol == "asistente":   # respuesta en texto (la usa el streaming de /ask/stream)
+            salida = self._asistente(_ultimo_humano(messages))
+            texto = salida.respuesta + "".join(f" [{f}]" for f in salida.fuentes)
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(texto))])
         reglas = {"investigador": self._investigador, "analista": self._analista, "operador": self._operador}[self.rol]
         return ChatResult(generations=[ChatGeneration(message=reglas(messages))])
+
+    # --- asistente de /ask: responde con la primera oración del fragmento que más se parece a la pregunta ---
+    def _asistente(self, texto: str) -> RespuestaLLM:
+        contexto, _, pregunta = texto.partition("PREGUNTA:")
+        terminos = set(tokenizar(pregunta))
+        mejor, coincidencias = None, 0
+        for bloque in contexto.removeprefix("CONTEXTO:").split("\n\n---\n\n"):
+            cabecera, _, cuerpo = bloque.strip().partition("\n")
+            if not cabecera.startswith("["):
+                continue
+            comunes = len(terminos & set(tokenizar(cuerpo)))
+            if comunes > coincidencias:
+                mejor, coincidencias = (cabecera.strip("[]"), cuerpo), comunes
+        if mejor is None or coincidencias < 2:
+            return RespuestaLLM(respuesta=NO_LO_SE, encontrada_en_contexto=False, fuentes=[])
+        chunk_id, cuerpo = mejor
+        lineas = [linea for linea in cuerpo.splitlines()[1:] if linea.strip()]
+        primera = re.split(r"(?<=[.:])\s", lineas[0] if lineas else cuerpo)[0]
+        return RespuestaLLM(respuesta=primera, encontrada_en_contexto=True, fuentes=[chunk_id])
 
     # --- supervisor: aplica la rúbrica del prompt, en orden ---
     def _supervisor(self, estado: dict) -> DecisionSupervisor:

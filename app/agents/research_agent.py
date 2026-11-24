@@ -1,11 +1,13 @@
-"""Agente de investigación: consulta la documentación de Colibrí y las reseñas de clientes.
+"""Agente de investigación: consulta la base de conocimiento (RAG híbrido) y las reseñas de clientes.
 
-Es un agente ReAct (create_react_agent) con solo dos herramientas. Recibe la instrucción del
-supervisor, no el historial completo, y escribe únicamente en state["hallazgos"].
+Es un agente ReAct (create_react_agent) con dos herramientas. Recibe la instrucción del supervisor, no el
+historial completo, y escribe únicamente en state["hallazgos"]. Cada hallazgo de documentación lleva el
+documento_id exacto que devolvió el buscador: es lo que el informe tiene que citar y lo que el validador
+controla.
 """
 import asyncio
 from datetime import date
-from typing import Any
+from typing import Any, Literal
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage
@@ -15,21 +17,27 @@ from pydantic import BaseModel, Field, ValidationError, model_validator
 
 from app.agents.comun import log, observaciones, siguiente_paso
 from app.config import RECURSION_LIMIT_ESPECIALISTA
-from app.datos import buscar_secciones, resenas_entre
+from app.datos import resenas_entre
+from app.rag.buscador import BuscadorHibrido
 from app.state import Aporte, EstadoOrquestador, Hallazgo
 
 PROMPT = """Sos el investigador de un equipo de análisis de Colibrí, una tienda online. Tu único trabajo es \
 conseguir información con tus herramientas: no calculás métricas ni sacás conclusiones.
-- buscar_documentacion: para el contexto (qué pasó en un incidente, cómo funciona un servicio).
+- buscar_documentacion: busca en la base de conocimiento (arquitectura, runbooks, postmortems, despliegue, \
+seguridad, preguntas frecuentes). Escribí la consulta con las palabras que usaría el documento. Si sabés de \
+qué tipo es, filtrá por categoria (postmortems, operaciones, arquitectura, devops, seguridad).
 - buscar_resenas: para saber qué opinan los clientes en un período. Para comparar dos períodos, una llamada por período.
 Si necesitás una fecha que no te dieron (por ejemplo, la del incidente), buscala primero en la documentación.
 Al terminar, respondé en dos o tres líneas qué encontraste: documentos y cantidad de reseñas por período. \
 No inventes datos que no vengan de las herramientas."""
 
+Categoria = Literal["postmortems", "operaciones", "arquitectura", "devops", "seguridad"]
+
 
 class BuscarDocumentacionInput(BaseModel):
-    consulta: str = Field(min_length=3, description="Palabras clave, por ejemplo 'postmortem incidente pagos octubre'")
-    k: int = Field(default=3, ge=1, le=5, description="Cantidad de secciones a devolver")
+    consulta: str = Field(min_length=3, description="Qué buscar, con palabras del dominio: 'incidente pagos octubre impacto clientes'")
+    categoria: Categoria | None = Field(default=None, description="Opcional: restringe la búsqueda a una categoría")
+    k: int = Field(default=4, ge=1, le=6, description="Cantidad de fragmentos a devolver")
 
 
 class BuscarResenasInput(BaseModel):
@@ -44,42 +52,43 @@ class BuscarResenasInput(BaseModel):
         return self
 
 
-@tool(args_schema=BuscarDocumentacionInput)
-async def buscar_documentacion(consulta: str, k: int = 3) -> dict[str, Any]:
-    """Busca en la documentación interna de Colibrí (arquitectura, guía de incidentes, postmortems, despliegue,
-    seguridad y preguntas frecuentes) las secciones más relevantes para la consulta. Devuelve documento_id,
-    título y contenido de cada sección. Usala para saber qué pasó en un incidente, cuándo fue, a cuántos
-    clientes afectó o qué dice un procedimiento."""
-    resultados = await asyncio.to_thread(buscar_secciones, consulta, k)
-    if not resultados:
-        return {"error": f"No encontré nada para '{consulta}'. Probá con otras palabras clave."}
-    return {"resultados": [{"documento_id": s.documento_id, "titulo": s.titulo, "contenido": s.contenido,
-                            "puntaje": p} for s, p in resultados]}
+def crear_herramientas(buscador: BuscadorHibrido) -> list:
+    @tool(args_schema=BuscarDocumentacionInput)
+    async def buscar_documentacion(consulta: str, categoria: str | None = None, k: int = 4) -> dict[str, Any]:
+        """Busca en la base de conocimiento interna de Colibrí (arquitectura, guía de incidentes y runbooks,
+        postmortems, despliegue, seguridad y preguntas frecuentes) con búsqueda híbrida: palabras exactas y
+        significado. Devuelve documento_id, título, sección y contenido de los fragmentos más relevantes. Usala
+        para saber qué pasó en un incidente, cuándo fue, a cuántos clientes afectó o qué dice un procedimiento."""
+        docs = await buscador.buscar(consulta, k=k, categoria=categoria)
+        if not docs:
+            return {"error": f"No encontré nada para '{consulta}'. Probá con otras palabras o sin categoría."}
+        return {"resultados": [{"documento_id": d.metadata["documento_id"], "titulo": d.metadata["titulo"],
+                                "seccion": d.metadata["seccion"], "categoria": d.metadata["categoria"],
+                                "contenido": d.page_content} for d in docs]}
 
+    @tool(args_schema=BuscarResenasInput)
+    async def buscar_resenas(desde: date, hasta: date, tema: str | None = None) -> dict[str, Any]:
+        """Trae las reseñas de clientes de Colibrí publicadas entre dos fechas, inclusive: id, fecha, calificación
+        (1 a 5 estrellas), canal y texto. Usala para saber qué opinan los clientes en un período. Para comparar
+        dos momentos (por ejemplo antes y después de un incidente), llamala una vez por cada período."""
+        resenas = await asyncio.to_thread(resenas_entre, desde, hasta, tema)
+        return {"periodo": f"{desde.isoformat()}/{hasta.isoformat()}", "tema": tema, "cantidad": len(resenas),
+                "resenas": resenas}
 
-@tool(args_schema=BuscarResenasInput)
-async def buscar_resenas(desde: date, hasta: date, tema: str | None = None) -> dict[str, Any]:
-    """Trae las reseñas de clientes de Colibrí publicadas entre dos fechas, inclusive: id, fecha, calificación
-    (1 a 5 estrellas), canal y texto. Usala para saber qué opinan los clientes en un período. Para comparar
-    dos momentos (por ejemplo antes y después de un incidente), llamala una vez por cada período."""
-    resenas = await asyncio.to_thread(resenas_entre, desde, hasta, tema)
-    return {"periodo": f"{desde.isoformat()}/{hasta.isoformat()}", "tema": tema, "cantidad": len(resenas),
-            "resenas": resenas}
-
-
-HERRAMIENTAS = [buscar_documentacion, buscar_resenas]
+    return [buscar_documentacion, buscar_resenas]
 
 
 def extraer_hallazgos(mensajes: list, ya_vistos: set[str]) -> list[Hallazgo]:
-    """Convierte las respuestas de las herramientas en Hallazgos validados (sin repetir referencias)."""
-    hallazgos: list[Hallazgo] = []
+    """Convierte las respuestas de las herramientas en Hallazgos validados (sin repetir referencias).
+    Si el buscador trae varios fragmentos de la misma sección, se juntan en un solo hallazgo."""
+    hallazgos: dict[str, Hallazgo] = {}
     for herramienta, resultado in observaciones(mensajes):
         if not isinstance(resultado, dict) or "error" in resultado:
             continue
         try:
             if herramienta == "buscar_documentacion":
-                nuevos = [Hallazgo(tipo="documento", referencia=r["documento_id"],
-                                   contenido=f"{r['titulo']}\n{r['contenido']}") for r in resultado["resultados"]]
+                nuevos = [Hallazgo(tipo="documento", referencia=r["documento_id"], contenido=r["contenido"])
+                          for r in resultado["resultados"]]
             else:
                 ids = [r["id"] for r in resultado["resenas"]]
                 promedio = sum(r["calificacion"] for r in resultado["resenas"]) / len(ids) if ids else 0
@@ -90,14 +99,19 @@ def extraer_hallazgos(mensajes: list, ya_vistos: set[str]) -> list[Hallazgo]:
             log.warning("Hallazgo descartado de %s: %s", herramienta, e)
             continue
         for h in nuevos:
-            if h.referencia not in ya_vistos:
-                ya_vistos.add(h.referencia)
-                hallazgos.append(h)
-    return hallazgos
+            if h.referencia in ya_vistos:
+                continue
+            if h.referencia in hallazgos:
+                previo = hallazgos[h.referencia]
+                if h.contenido not in previo.contenido:
+                    hallazgos[h.referencia] = previo.model_copy(update={"contenido": f"{previo.contenido}\n{h.contenido}"})
+            else:
+                hallazgos[h.referencia] = h
+    return list(hallazgos.values())
 
 
-def crear_investigador(modelo: BaseChatModel):
-    agente = create_react_agent(modelo, HERRAMIENTAS, prompt=PROMPT, name="investigador")
+def crear_investigador(modelo: BaseChatModel, buscador: BuscadorHibrido):
+    agente = create_react_agent(modelo, crear_herramientas(buscador), prompt=PROMPT, name="investigador")
 
     async def investigador(state: EstadoOrquestador) -> dict:
         # Contexto acotado: el pedido y la instrucción del supervisor, no toda la conversación

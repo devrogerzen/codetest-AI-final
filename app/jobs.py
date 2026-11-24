@@ -1,7 +1,11 @@
-"""Estado de los trabajos (jobs) y cola de mensajes, los dos en Redis.
+"""Estado de los trabajos (jobs), conversaciones y cola de mensajes, todo en Redis.
 
 - Cada job es un hash `colibri:job:<id>` con su estado, el pedido, el resultado o el error.
 - La cola es una lista `colibri:cola`: la API hace RPUSH y los workers BLPOP.
+- Cada job pertenece a una conversación. La conversación es el thread_id del checkpointer de LangGraph:
+  sus turnos comparten memoria. `colibri:conversacion:<id>:jobs` lista sus jobs en orden.
+- Una conversación procesa un pedido a la vez: `colibri:conversacion:<id>:activo` (SET NX) guarda el job
+  en curso y se libera cuando termina. Si llega otro pedido mientras tanto, la API responde 409.
 - Regla de oro: el estado se guarda ANTES de encolar. Si el worker fuera más rápido que la escritura,
   el cliente podría consultar un job que todavía no existe y recibir un 404.
 """
@@ -14,7 +18,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 from redis.asyncio import Redis
 
-from app.config import COLA, PREFIJO_JOB
+from app.config import COLA, PREFIJO_CONVERSACION, PREFIJO_JOB
 
 
 class EstadoJob(StrEnum):
@@ -25,8 +29,12 @@ class EstadoJob(StrEnum):
     FAILED = "FAILED"
 
 
+TERMINADOS = {EstadoJob.DONE, EstadoJob.FAILED}
+
+
 class Job(BaseModel):
     id: str
+    conversacion_id: str
     pedido: str
     estado: EstadoJob
     creado: str
@@ -40,6 +48,12 @@ class Job(BaseModel):
     duracion_s: float | None = None          # tiempo de proceso, sin contar la espera humana
 
 
+class ConversacionOcupada(Exception):
+    def __init__(self, conversacion_id: str, job_activo: str):
+        super().__init__(f"La conversación {conversacion_id} todavía está procesando el job {job_activo}")
+        self.conversacion_id, self.job_activo = conversacion_id, job_activo
+
+
 def _ahora() -> str:
     return datetime.now().isoformat(timespec="milliseconds")
 
@@ -51,12 +65,32 @@ class RepositorioJobs:
     def _clave(self, job_id: str) -> str:
         return f"{PREFIJO_JOB}{job_id}"
 
-    async def crear(self, pedido: str) -> Job:
+    def _conversacion(self, conversacion_id: str, sufijo: str) -> str:
+        return f"{PREFIJO_CONVERSACION}{conversacion_id}:{sufijo}"
+
+    async def crear(self, pedido: str, conversacion_id: str | None = None) -> Job:
+        conversacion_id = conversacion_id or str(uuid.uuid4())
         ahora = _ahora()
-        job = Job(id=str(uuid.uuid4()), pedido=pedido, estado=EstadoJob.PENDING, creado=ahora, actualizado=ahora)
-        await self.guardar(job)                                                   # 1. primero el estado
-        await self.redis.rpush(COLA, json.dumps({"job_id": job.id, "tipo": "iniciar"}))   # 2. después la cola
+        job = Job(id=str(uuid.uuid4()), conversacion_id=conversacion_id, pedido=pedido, estado=EstadoJob.PENDING,
+                  creado=ahora, actualizado=ahora)
+        # Un pedido a la vez por conversación: SET NX es atómico, dos POST simultáneos no pasan los dos
+        if not await self.redis.set(self._conversacion(conversacion_id, "activo"), job.id, nx=True):
+            activo = await self.redis.get(self._conversacion(conversacion_id, "activo"))
+            raise ConversacionOcupada(conversacion_id, activo or "?")
+        try:
+            await self.guardar(job)                                                    # 1. primero el estado
+            await self.redis.rpush(self._conversacion(conversacion_id, "jobs"), job.id)
+            await self.redis.rpush(COLA, json.dumps({"job_id": job.id, "tipo": "iniciar"}))   # 2. después la cola
+        except Exception:
+            await self.liberar(job)
+            raise
         return job
+
+    async def liberar(self, job: Job) -> None:
+        """Libera la conversación si el job que la tiene tomada es este."""
+        clave = self._conversacion(job.conversacion_id, "activo")
+        if await self.redis.get(clave) == job.id:
+            await self.redis.delete(clave)
 
     async def guardar(self, job: Job) -> None:
         datos = {k: json.dumps(v, ensure_ascii=False) for k, v in job.model_dump(mode="json").items()}
@@ -81,6 +115,9 @@ class RepositorioJobs:
         """Bloquea hasta `timeout` segundos esperando un mensaje (BLPOP no consume CPU mientras espera)."""
         par = await self.redis.blpop([COLA], timeout=timeout)
         return json.loads(par[1]) if par else None
+
+    async def jobs_de_conversacion(self, conversacion_id: str) -> list[str]:
+        return await self.redis.lrange(self._conversacion(conversacion_id, "jobs"), 0, -1)
 
     async def recientes(self, limite: int = 20) -> list[Job]:
         jobs = []

@@ -4,8 +4,9 @@
 LangChain/LangGraph: cada nodo del grafo, cada llamada al LLM y cada herramienta queda como un span,
 con sus tokens (y por lo tanto su costo) y su latencia. Se llama una sola vez al arrancar la API o el worker.
 
-`contexto_de_traza(job)` agrega a todos los spans de un job el session.id (= job_id) y metadata útil:
-la versión de los prompts, el tipo de mensaje y el worker. Así en Phoenix se filtra por job o por versión.
+`contexto_de_traza(...)` agrega a todos los spans de un pedido el session.id (= id de la conversación) y
+metadata útil: el job, la versión de los prompts, el tipo de mensaje y el worker. Así en Phoenix se filtra
+por conversación, por job o por versión de prompts.
 """
 import logging
 from contextlib import contextmanager
@@ -33,11 +34,13 @@ def configurar_observabilidad() -> None:
 
 
 @contextmanager
-def contexto_de_traza(job_id: str, tipo: str, worker: str) -> Iterator[None]:
+def contexto_de_traza(sesion: str, tipo: str, **metadata: str) -> Iterator[None]:
+    """sesion = id de la conversación: en Phoenix, todos los turnos de una conversación quedan en la misma
+    sesión. tipo = iniciar, reanudar o ask; metadata = job_id, worker, etc."""
     if not TRAZAS_ACTIVAS:
         yield
         return
     from openinference.instrumentation import using_attributes
-    with using_attributes(session_id=job_id, tags=[tipo], prompt_template_version=PROMPT_VERSION,
-                          metadata={"job_id": job_id, "tipo": tipo, "worker": worker, "prompt_version": PROMPT_VERSION}):
+    with using_attributes(session_id=sesion, tags=[tipo], prompt_template_version=PROMPT_VERSION,
+                          metadata={"tipo": tipo, "prompt_version": PROMPT_VERSION, **metadata}):
         yield

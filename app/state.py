@@ -7,7 +7,11 @@ Cada agente es dueño de su parcela del estado y solo escribe ahí:
     validador    -> validado / observaciones                       supervisor -> siguiente / instruccion / delegaciones
 
 Todos agregan una entrada en `aportes`, que es el registro de quién aportó qué y en qué paso.
-Las listas usan el reducer operator.add: cada nodo agrega, nadie pisa lo que escribió otro.
+Las listas usan el reducer `acumular`: cada nodo agrega, nadie pisa lo que escribió otro.
+
+Conversaciones: el thread_id del checkpointer es el id de la conversación, así que el estado sobrevive entre
+pedidos (y a un reinicio). Cada pedido nuevo empieza un turno: `estado_turno()` vacía lo propio del turno
+(hallazgos, métricas, informe...) y deja `historial` y `messages`, que son la memoria de la conversación.
 """
 import operator
 from typing import Annotated, Literal
@@ -72,30 +76,49 @@ class Informe(BaseModel):
     accion: str | None = Field(default=None, description="Qué pasó con la acción pedida, si hubo una (copiá resultado_accion)")
 
 
+class Turno(BaseModel):
+    """Un pedido ya resuelto de la conversación: lo que ve el supervisor en el turno siguiente."""
+    pedido: str
+    titulo: str
+    resumen: str
+    accion: str | None = None
+
+
+def acumular(actual: list | None, nuevo: list | None) -> list:
+    """operator.add, pero None vacía la lista: así un turno nuevo arranca sin los hallazgos del anterior."""
+    if nuevo is None:
+        return []
+    return (actual or []) + nuevo
+
+
 class EstadoOrquestador(MessagesState):
     pedido: str
     siguiente: Decision
     instruccion: str
     delegaciones: int
-    hallazgos: Annotated[list[Hallazgo], operator.add]
-    metricas: Annotated[list[Metrica], operator.add]
+    hallazgos: Annotated[list[Hallazgo], acumular]
+    metricas: Annotated[list[Metrica], acumular]
     accion: AccionPropuesta | None
     decision_humana: DecisionHumana | None
     resultado_accion: str | None
     informe: Informe | None
     validado: bool
     observaciones: list[str]
-    aportes: Annotated[list[Aporte], operator.add]
+    aportes: Annotated[list[Aporte], acumular]
+    historial: Annotated[list[Turno], operator.add]   # no se vacía: es la memoria de la conversación
 
 
 # Clases que el checkpointer puede reconstruir al leer de Redis. Por seguridad, el serializador JSON solo revive
 # tipos de una lista permitida, escritos como partes del módulo: ("app", "state", "Informe"). Sin esto, al
 # reanudar un hilo (o al leer el estado final) estos objetos volverían como diccionarios.
-MODELOS_DEL_ESTADO = (Hallazgo, Metrica, AccionPropuesta, DecisionHumana, Aporte, DecisionSupervisor, Informe)
+MODELOS_DEL_ESTADO = (Hallazgo, Metrica, AccionPropuesta, DecisionHumana, Aporte, DecisionSupervisor, Informe, Turno)
 PERMITIDOS_JSON = [(*modelo.__module__.split("."), modelo.__name__) for modelo in MODELOS_DEL_ESTADO]
 
 
-def estado_inicial(pedido: str) -> dict:
+def estado_turno(pedido: str) -> dict:
+    """La entrada de cada pedido. None en las listas = vaciarlas (ver `acumular`); historial y messages
+    se acumulan entre turnos."""
     return {"pedido": pedido, "messages": [("user", pedido)], "siguiente": "investigador", "instruccion": "",
-            "delegaciones": 0, "hallazgos": [], "metricas": [], "accion": None, "decision_humana": None,
-            "resultado_accion": None, "informe": None, "validado": False, "observaciones": [], "aportes": []}
+            "delegaciones": 0, "hallazgos": None, "metricas": None, "accion": None, "decision_humana": None,
+            "resultado_accion": None, "informe": None, "validado": False, "observaciones": [], "aportes": None,
+            "historial": []}
