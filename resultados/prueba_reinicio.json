@@ -1,0 +1,234 @@
+{
+  "job_id": "d93a2585-ca7f-4be3-9caf-676118e719ec",
+  "conversacion_id": "134fd7ea-1157-4fea-957b-e7ec44a315aa",
+  "antes_del_reinicio": {
+    "id": "d93a2585-ca7f-4be3-9caf-676118e719ec",
+    "conversacion_id": "134fd7ea-1157-4fea-957b-e7ec44a315aa",
+    "pedido": "Mandá un cupón del 10% a los clientes con cobro doble por el incidente de pagos.",
+    "estado": "WAITING_APPROVAL",
+    "creado": "2026-11-24T02:31:41.386",
+    "actualizado": "2026-11-24T02:31:56.558",
+    "worker": "worker-2",
+    "recorrido": [
+      "supervisor",
+      "investigador",
+      "supervisor",
+      "operador"
+    ],
+    "pregunta": {
+      "pregunta": "¿Aprobás esta acción? Enviar un cupón del 10% a 312 clientes a los que se les cobró dos veces durante el incidente de pagos del 14/10/2026. Costo estimado: $212.160.",
+      "accion": {
+        "tipo": "enviar_cupones",
+        "segmento": "cobro_doble",
+        "porcentaje": 10,
+        "destinatarios": 312,
+        "costo_estimado": 212160.0,
+        "descripcion": "Enviar un cupón del 10% a 312 clientes a los que se les cobró dos veces durante el incidente de pagos del 14/10/2026"
+      },
+      "umbral": 50000.0
+    },
+    "decision": null,
+    "resultado": null,
+    "error": null,
+    "duracion_s": 15.168
+  },
+  "despues_del_reinicio": {
+    "id": "d93a2585-ca7f-4be3-9caf-676118e719ec",
+    "conversacion_id": "134fd7ea-1157-4fea-957b-e7ec44a315aa",
+    "pedido": "Mandá un cupón del 10% a los clientes con cobro doble por el incidente de pagos.",
+    "estado": "DONE",
+    "creado": "2026-11-24T02:31:41.386",
+    "actualizado": "2026-11-24T02:32:34.220",
+    "worker": "worker-3",
+    "recorrido": [
+      "supervisor",
+      "investigador",
+      "supervisor",
+      "operador",
+      "aprobacion_humana",
+      "ejecutor",
+      "supervisor",
+      "redactor",
+      "validador",
+      "supervisor"
+    ],
+    "pregunta": null,
+    "decision": {
+      "aprobado": true,
+      "revisor": "Roger",
+      "comentario": "Aprobado después del reinicio"
+    },
+    "resultado": {
+      "informe": {
+        "titulo": "Informe del incidente de pagos del 14/10/2026",
+        "resumen": "El 14 de octubre de 2026 se produjo una caída del proveedor de pagos que afectó el servicio durante 3 horas y 15 minutos, provocando cobros duplicados en 312 clientes. Se ejecutó la compensación mediante el envío de cupones del 10% de descuento a cada uno de los afectados.",
+        "hallazgos": [
+          "El incidente ocurrió el 14/10/2026 debido a una caída del proveedor de pagos, resultando en un pico de errores del 38%.",
+          "La falta de claves de idempotencia y la latencia en la activación del modo cola permitieron que 312 clientes fueran cobrados dos veces.",
+          "El envío de los cupones del 10% fue completado exitosamente para los 312 clientes afectados."
+        ],
+        "metricas_citadas": [],
+        "fuentes": [
+          "postmortem_pagos_2026-10.md#resumen-del-incidente",
+          "postmortem_pagos_2026-10.md#causa-raiz",
+          "postmortem_pagos_2026-10.md#impacto-en-clientes",
+          "postmortem_pagos_2026-10.md#acciones"
+        ],
+        "recomendaciones": [
+          "Implementar claves de idempotencia en todos los cobros para evitar duplicidad.",
+          "Deshabilitar el botón de pago durante procesos en curso.",
+          "Reducir el umbral de alerta del sistema de pagos al 1%."
+        ],
+        "accion": "Se enviaron 312 cupones del 10% (costo estimado $212.160), aprobados por Roger."
+      },
+      "validado": true,
+      "observaciones": [],
+      "accion": {
+        "tipo": "enviar_cupones",
+        "segmento": "cobro_doble",
+        "porcentaje": 10,
+        "destinatarios": 312,
+        "costo_estimado": 212160.0,
+        "descripcion": "Enviar un cupón del 10% a 312 clientes a los que se les cobró dos veces durante el incidente de pagos del 14/10/2026"
+      },
+      "resultado_accion": "Se enviaron 312 cupones del 10% (costo estimado $212.160), aprobados por Roger.",
+      "aportes": [
+        {
+          "paso": 1,
+          "agente": "supervisor",
+          "resumen": "-> investigador: Busca la documentación sobre el incidente de pagos por cobro doble para obtener el contexto y los períodos afectados. (No hay documentación que explique el contexto del pedido, por lo que según el paso 1 de la rúbrica se debe enviar al investigador.)"
+        },
+        {
+          "paso": 2,
+          "agente": "investigador",
+          "resumen": "Encontré el postmortem del incidente ocurrido el 14/10/2026, donde se confirma que 312 clientes sufrieron un cobro doble debido a la falta de claves de idempotencia en el servicio de pagos. El documento indica que se debían enviar cupones de descuento a estos clientes afectados tras la resolución de los reintegros el 18/10/2026. [postmortem_pagos_2026-10.md#acciones, postmortem_pagos_2026-10.md#causa-raiz, postmortem_pagos_2026-10.md#impacto-en-clientes, postmortem_pagos_2026-10.md#resumen-del-incidente]"
+        },
+        {
+          "paso": 3,
+          "agente": "supervisor",
+          "resumen": "-> operador: Prepara el envío de un cupón de descuento del 10% para los 312 clientes afectados por el cobro doble del incidente del 14/10/2026. (Ya se cuenta con la documentación y el contexto del incidente, y el pedido requiere ejecutar una acción de enviar cupones que aún no tiene resultado_accion, por lo que según el paso 4 de la rúbrica corresponde enviar al operador.)"
+        },
+        {
+          "paso": 4,
+          "agente": "operador",
+          "resumen": "Propone: Enviar un cupón del 10% a 312 clientes a los que se les cobró dos veces durante el incidente de pagos del 14/10/2026 (costo estimado $212.160)"
+        },
+        {
+          "paso": 5,
+          "agente": "aprobacion",
+          "resumen": "Acción aprobada por Roger: Aprobado después del reinicio"
+        },
+        {
+          "paso": 6,
+          "agente": "ejecutor",
+          "resumen": "Se enviaron 312 cupones del 10% (costo estimado $212.160), aprobados por Roger."
+        },
+        {
+          "paso": 7,
+          "agente": "supervisor",
+          "resumen": "-> redactor: Redacta el informe final detallando el incidente de pagos del 14/10/2026, la afectación de los 312 clientes y el resultado exitoso del envío de los cupones del 10%. (Ya se cuenta con la documentación, el contexto y el resultado_accion de la ejecución del cupón, por lo que según el paso 5 de la rúbrica corresponde redactar el informe.)"
+        },
+        {
+          "paso": 8,
+          "agente": "redactor",
+          "resumen": "Informe 'Informe del incidente de pagos del 14/10/2026' con 4 fuentes y 0 métricas citadas"
+        },
+        {
+          "paso": 9,
+          "agente": "validador",
+          "resumen": "Informe aprobado."
+        },
+        {
+          "paso": 10,
+          "agente": "supervisor",
+          "resumen": "-> FINALIZAR: El proceso ha finalizado correctamente ya que el informe fue aprobado por el validador y se completaron todas las etapas. (Todo se cumple según el paso 7 de la rúbrica, por lo que se procede a finalizar.)"
+        }
+      ],
+      "turno": 1
+    },
+    "error": null,
+    "duracion_s": 43.253
+  },
+  "segundo_turno": {
+    "id": "69d9092b-da22-4fb2-a129-41fa0a30df06",
+    "conversacion_id": "134fd7ea-1157-4fea-957b-e7ec44a315aa",
+    "pedido": "¿Qué acción se tomó con los clientes con cobro doble y cuánto costó?",
+    "estado": "DONE",
+    "creado": "2026-11-24T02:32:34.320",
+    "actualizado": "2026-11-24T02:32:47.869",
+    "worker": "worker-1",
+    "recorrido": [
+      "supervisor",
+      "redactor",
+      "validador",
+      "supervisor"
+    ],
+    "pregunta": null,
+    "decision": null,
+    "resultado": {
+      "informe": {
+        "titulo": "Informe sobre la compensación por cobros duplicados",
+        "resumen": "A raíz del incidente de pagos del 14 de octubre de 2026, se compensó a los 312 clientes afectados mediante el envío de cupones de descuento. Esta acción tuvo un costo total estimado de $212.160.",
+        "hallazgos": [
+          "La falla del proveedor de pagos afectó a 312 clientes con cobros duplicados.",
+          "Se enviaron 312 cupones del 10% de descuento como medida de compensación.",
+          "El costo total de la compensación se estimó en $212.160."
+        ],
+        "metricas_citadas": [],
+        "fuentes": [
+          "conversacion#turno-1"
+        ],
+        "recomendaciones": [
+          "Monitorear la tasa de redención de los cupones enviados para evaluar el impacto real en la retención de clientes.",
+          "Revisar los acuerdos de nivel de servicio (SLA) con el proveedor de pagos para evitar futuras duplicidades."
+        ],
+        "accion": null
+      },
+      "validado": true,
+      "observaciones": [],
+      "accion": null,
+      "resultado_accion": null,
+      "aportes": [
+        {
+          "paso": 1,
+          "agente": "supervisor",
+          "resumen": "-> redactor: Redactá el informe final detallando la acción tomada con los clientes con cobro doble y su costo, utilizando los datos de la conversacion_previa. (Ya se cuenta con la documentación, el análisis y el resultado de la acción en la conversacion_previa, pero falta generar el informe final según el punto 5 de la rúbrica.)"
+        },
+        {
+          "paso": 2,
+          "agente": "redactor",
+          "resumen": "Informe 'Informe sobre la compensación por cobros duplicados' con 1 fuentes y 0 métricas citadas"
+        },
+        {
+          "paso": 3,
+          "agente": "validador",
+          "resumen": "Informe aprobado."
+        },
+        {
+          "paso": 4,
+          "agente": "supervisor",
+          "resumen": "-> FINALIZAR: El flujo de trabajo ha concluido con éxito tras la aprobación del informe. (Todo se cumple según la regla 7 de la rúbrica.)"
+        }
+      ],
+      "turno": 2
+    },
+    "error": null,
+    "duracion_s": 13.543
+  },
+  "turnos": [
+    {
+      "referencia": "conversacion#turno-1",
+      "pedido": "Mandá un cupón del 10% a los clientes con cobro doble por el incidente de pagos.",
+      "titulo": "Informe del incidente de pagos del 14/10/2026",
+      "resumen": "El 14 de octubre de 2026 se produjo una caída del proveedor de pagos que afectó el servicio durante 3 horas y 15 minutos, provocando cobros duplicados en 312 clientes. Se ejecutó la compensación mediante el envío de cupones del 10% de descuento a cada uno de los afectados.",
+      "accion": "Se enviaron 312 cupones del 10% (costo estimado $212.160), aprobados por Roger."
+    },
+    {
+      "referencia": "conversacion#turno-2",
+      "pedido": "¿Qué acción se tomó con los clientes con cobro doble y cuánto costó?",
+      "titulo": "Informe sobre la compensación por cobros duplicados",
+      "resumen": "A raíz del incidente de pagos del 14 de octubre de 2026, se compensó a los 312 clientes afectados mediante el envío de cupones de descuento. Esta acción tuvo un costo total estimado de $212.160.",
+      "accion": null
+    }
+  ]
+}

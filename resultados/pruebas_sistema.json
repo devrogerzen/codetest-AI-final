@@ -1,0 +1,882 @@
+{
+  "fecha": "2026-11-23T23:31:39",
+  "url": "http://127.0.0.1:8000",
+  "salud": {
+    "redis": true,
+    "base_vectorial": {
+      "coleccion": "colibri-conocimiento",
+      "fragmentos": 35,
+      "embeddings": "google"
+    },
+    "workers_en_api": 0,
+    "modelos": "llm",
+    "trazas": "http://phoenix:6006/v1/traces (proyecto colibri-intelligence)"
+  },
+  "preguntas": [
+    {
+      "prueba": "rag_encontrada",
+      "pregunta": "¿Qué tiene que activar la guardia si el proveedor de pagos responde con errores?",
+      "segundos": 6.95,
+      "respuesta": "Si el problema es del proveedor, la guardia debe activar el feature flag pagos_modo_cola.",
+      "encontrada": true,
+      "fuentes": [
+        "guia_incidentes.md#runbook-errores-5xx-en-pagos"
+      ]
+    },
+    {
+      "prueba": "rag_no_lo_se",
+      "pregunta": "¿Cuál es la capital de Australia?",
+      "segundos": 3.54,
+      "respuesta": "No lo sé.",
+      "encontrada": false,
+      "fuentes": []
+    },
+    {
+      "prueba": "rag_stream",
+      "pregunta": "¿Con qué comando se pasa Redis a la réplica?",
+      "primera_palabra_s": 4.2,
+      "segundos": 4.3,
+      "respuesta": "Para realizar el failover de Redis a la réplica, se debe utilizar el comando: `colibri-ops redis failover`.\n\n[guia_incidentes.md#runbook-redis-caido-o-inaccesible::0]",
+      "encontrada": true,
+      "fuentes_citadas": [
+        "guia_incidentes.md#runbook-redis-caido-o-inaccesible::0"
+      ]
+    }
+  ],
+  "jobs": [
+    {
+      "job_id": "f7e0d950-b4a4-4109-95f5-b579885b51c8",
+      "conversacion_id": "82a2e8d7-ec72-492e-a40a-6a41fc06a9bd",
+      "estado": "PENDING",
+      "consultar": "/tasks/f7e0d950-b4a4-4109-95f5-b579885b51c8",
+      "prueba": "analisis",
+      "pedido": "¿Cómo impactó el incidente de pagos de octubre en la opinión de los clientes? Quiero saber qué pasó, cuánto cambiaron las reseñas y qué deberíamos hacer.",
+      "post_ms": 14.2,
+      "final": {
+        "id": "f7e0d950-b4a4-4109-95f5-b579885b51c8",
+        "conversacion_id": "82a2e8d7-ec72-492e-a40a-6a41fc06a9bd",
+        "pedido": "¿Cómo impactó el incidente de pagos de octubre en la opinión de los clientes? Quiero saber qué pasó, cuánto cambiaron las reseñas y qué deberíamos hacer.",
+        "estado": "DONE",
+        "creado": "2026-11-24T02:28:11.490",
+        "actualizado": "2026-11-24T02:29:40.042",
+        "worker": "worker-3",
+        "recorrido": [
+          "supervisor",
+          "investigador",
+          "supervisor",
+          "analista",
+          "supervisor",
+          "redactor",
+          "validador",
+          "supervisor"
+        ],
+        "pregunta": null,
+        "decision": null,
+        "resultado": {
+          "informe": {
+            "titulo": "Impacto del incidente de pagos de octubre en la satisfacción del cliente",
+            "resumen": "El incidente técnico del 14 de octubre, que afectó los procesos de pago y generó cobros duplicados, provocó un deterioro significativo en la percepción de los usuarios. La calificación promedio de las reseñas cayó un 52.94%, pasando de 4.25 a 2.00 estrellas tras el evento.",
+            "hallazgos": [
+              "Un incidente de pagos entre las 19:40 y 22:55 causó una tasa de error del 38% y afectó a 1.240 pedidos.",
+              "La falta de claves de idempotencia y una alerta de errores con umbral elevado permitieron que 312 clientes fueran cobrados doblemente.",
+              "El impacto derivó en una cuadruplicación de contactos a soporte y una caída abrupta en la calificación promedio de las reseñas recibidas post-incidente.",
+              "Se han definido acciones correctivas, incluyendo la implementación de claves de idempotencia y el ajuste de los umbrales de alerta del sistema."
+            ],
+            "metricas_citadas": [
+              "promedio[antes_incidente]",
+              "promedio[despues_incidente]",
+              "variacion_promedio_pct[antes_incidente->despues_incidente]",
+              "bajas_pct[despues_incidente]",
+              "cambio_negativas_pp[antes_incidente->despues_incidente]"
+            ],
+            "fuentes": [
+              "postmortem_pagos_2026-10.md#resumen-del-incidente",
+              "postmortem_pagos_2026-10.md#causa-raiz",
+              "postmortem_pagos_2026-10.md#impacto-en-clientes",
+              "postmortem_pagos_2026-10.md#acciones",
+              "resenas 2026-10-07/2026-10-13",
+              "resenas 2026-10-15/2026-10-21"
+            ],
+            "recomendaciones": [
+              "Implementar claves de idempotencia en todos los cobros para evitar duplicados ante reintentos.",
+              "Deshabilitar el botón de pago una vez iniciado el proceso para prevenir interacciones adicionales del cliente durante errores.",
+              "Reducir el umbral de alerta del sistema de pagos al 1% durante un periodo de 2 minutos para mejorar la detección temprana.",
+              "Mantener la política de resarcimiento mediante cupones de descuento para los clientes afectados por los cobros dobles."
+            ],
+            "accion": null
+          },
+          "validado": true,
+          "observaciones": [],
+          "accion": null,
+          "resultado_accion": null,
+          "aportes": [
+            {
+              "paso": 1,
+              "agente": "supervisor",
+              "resumen": "-> investigador: Busca la documentación sobre el incidente de pagos de octubre y trae las reseñas de los clientes de los dos períodos necesarios para comparar antes y después del incidente. (No hay documentación ni reseñas de los dos períodos requeridos para evaluar el impacto, por lo que se debe delegar al investigador según el punto 1 y 2 de la rúbrica.)"
+            },
+            {
+              "paso": 2,
+              "agente": "investigador",
+              "resumen": "Encontré el postmortem detallado del incidente del 14/10/2026, donde se explica la falla del proveedor externo, el impacto de los cobros duplicados y las acciones correctivas técnicas (idempotencia, deshabilitar botón de pago y mejora de alertas).\n\nRespecto a las reseñas, obtuve 4 antes del incidente (promedio alto) y 7 después (con una baja notable en la calificación y comentarios sobre cobros duplicados y lentitud en el soporte). [postmortem_pagos_2026-10.md#resumen-del-incidente, postmortem_pagos_2026-10.md#causa-raiz, postmortem_pagos_2026-10.md#impacto-en-clientes, postmortem_pagos_2026-10.md#acciones, resenas 2026-10-07/2026-10-13, resenas 2026-10-15/2026-10-21]"
+            },
+            {
+              "paso": 3,
+              "agente": "supervisor",
+              "resumen": "-> analista: Calcula el sentimiento y las métricas comparativas sobre las reseñas del período anterior (07/10/2026 al 13/10/2026) y posterior (15/10/2026 al 21/10/2026) al incidente de pagos. (Ya se cuenta con la documentación y las reseñas de ambos períodos por parte del investigador, pero aún no se han calculado las métricas de opinión según el punto 3 de la rúbrica.)"
+            },
+            {
+              "paso": 4,
+              "agente": "analista",
+              "resumen": "El incidente de pagos provocó un impacto severo: la calificación promedio cayó un 53% (de 4.25 a 2.00) y el sentimiento negativo se disparó 71.43 puntos porcentuales. Se recomienda realizar una campaña de comunicación proactiva y ofrecer compensaciones a los clientes afectados para recuperar la confianza perdida. [15 métricas]"
+            },
+            {
+              "paso": 5,
+              "agente": "supervisor",
+              "resumen": "-> redactor: Redacta el informe final detallando el impacto del incidente de pagos de octubre en las reseñas, incluyendo las métricas comparativas y las recomendaciones sugeridas por el analista. (Ya se cuenta con la documentación, las reseñas de ambos períodos y el análisis métrico completo. Como el pedido también solicita qué se debería hacer (recomendaciones) y aún no hay un informe redactado, corresponde pasar al redactor según el punto 5 de la rúbrica.)"
+            },
+            {
+              "paso": 6,
+              "agente": "redactor",
+              "resumen": "Informe 'Impacto del incidente de pagos de octubre en la satisfacción del cliente' con 6 fuentes y 5 métricas citadas"
+            },
+            {
+              "paso": 7,
+              "agente": "validador",
+              "resumen": "Informe aprobado."
+            },
+            {
+              "paso": 8,
+              "agente": "supervisor",
+              "resumen": "-> FINALIZAR: El proceso ha concluido exitosamente ya que el informe fue redactado y aprobado por el validador. (Se cumplen todos los puntos de la rúbrica, incluyendo la validación exitosa del informe final (punto 7).)"
+            }
+          ],
+          "turno": 1
+        },
+        "error": null,
+        "duracion_s": 88.554
+      },
+      "total_s": 89.42
+    },
+    {
+      "job_id": "c1e86f4e-f649-4d77-9c57-6709a2ca9137",
+      "conversacion_id": "cd377148-371a-4430-ad00-a43ba373a197",
+      "estado": "PENDING",
+      "consultar": "/tasks/c1e86f4e-f649-4d77-9c57-6709a2ca9137",
+      "prueba": "cupon_aprobado",
+      "pedido": "Mandá un cupón del 10% a los clientes con cobro doble por el incidente de pagos.",
+      "post_ms": 43.0,
+      "decision": {
+        "aprobado": true,
+        "revisor": "Roger (revisión de prueba)",
+        "comentario": "Ok, es lo que pide el pedido."
+      },
+      "final": {
+        "id": "c1e86f4e-f649-4d77-9c57-6709a2ca9137",
+        "conversacion_id": "cd377148-371a-4430-ad00-a43ba373a197",
+        "pedido": "Mandá un cupón del 10% a los clientes con cobro doble por el incidente de pagos.",
+        "estado": "DONE",
+        "creado": "2026-11-24T02:28:11.510",
+        "actualizado": "2026-11-24T02:30:33.051",
+        "worker": "worker-3",
+        "recorrido": [
+          "supervisor",
+          "investigador",
+          "supervisor",
+          "analista",
+          "supervisor",
+          "operador",
+          "aprobacion_humana",
+          "ejecutor",
+          "supervisor",
+          "redactor",
+          "validador",
+          "supervisor"
+        ],
+        "pregunta": null,
+        "decision": {
+          "aprobado": true,
+          "revisor": "Roger (revisión de prueba)",
+          "comentario": "Ok, es lo que pide el pedido."
+        },
+        "resultado": {
+          "informe": {
+            "titulo": "Informe del Incidente de Pagos del 14/10/2026",
+            "resumen": "El 14/10/2026 una caída del proveedor de pagos provocó que 312 clientes sufrieran cobros dobles debido a la falta de idempotencia. Se ejecutó la acción de compensación enviando cupones de descuento a todos los afectados.",
+            "hallazgos": [
+              "La caída del proveedor de pagos durante 3 horas y 15 minutos resultó en 312 cobros dobles por no implementar claves de idempotencia.",
+              "Las reseñas del periodo reportaron una calificación promedio de 2.5, con un 50% de sentimiento negativo entre los afectados.",
+              "El impacto en la experiencia fue agravado por la demora de 6 horas en notificaciones y el botón de pago habilitado tras el primer error."
+            ],
+            "metricas_citadas": [
+              "sentimiento_negativo_pct[afectados_cobro_doble]",
+              "sentimiento_positivo_pct[afectados_cobro_doble]",
+              "cantidad[afectados_cobro_doble]",
+              "promedio[afectados_cobro_doble]",
+              "mediana[afectados_cobro_doble]",
+              "bajas_pct[afectados_cobro_doble]"
+            ],
+            "fuentes": [
+              "postmortem_pagos_2026-10.md#causa-raiz",
+              "postmortem_pagos_2026-10.md#impacto-en-clientes",
+              "postmortem_pagos_2026-10.md#resumen-del-incidente",
+              "resenas 2026-10-14/2026-10-20"
+            ],
+            "recomendaciones": [
+              "Implementar claves de idempotencia en todos los procesos de cobro.",
+              "Deshabilitar el botón Pagar de forma automática durante cobros en curso.",
+              "Reducir el umbral de alerta del sistema ante errores de pago al 1%."
+            ],
+            "accion": "Se enviaron 312 cupones del 10% (costo estimado $212.160), aprobados por Roger (revisión de prueba)."
+          },
+          "validado": true,
+          "observaciones": [],
+          "accion": {
+            "tipo": "enviar_cupones",
+            "segmento": "cobro_doble",
+            "porcentaje": 10,
+            "destinatarios": 312,
+            "costo_estimado": 212160.0,
+            "descripcion": "Enviar un cupón del 10% a 312 clientes a los que se les cobró dos veces durante el incidente de pagos del 14/10/2026"
+          },
+          "resultado_accion": "Se enviaron 312 cupones del 10% (costo estimado $212.160), aprobados por Roger (revisión de prueba).",
+          "aportes": [
+            {
+              "paso": 1,
+              "agente": "supervisor",
+              "resumen": "-> investigador: Busca en la base de conocimiento los detalles del incidente de pagos por cobro doble y trae las reseñas de los clientes afectados para entender el contexto. (No hay documentación ni contexto sobre el pedido en los aportes, por lo que se debe delegar al investigador según el punto 1 de la rúbrica.)"
+            },
+            {
+              "paso": 2,
+              "agente": "investigador",
+              "resumen": "Encontré el postmortem del incidente ocurrido el 14/10/2026, donde se detalla que 312 clientes sufrieron cobros dobles debido a la falta de idempotencia en los pagos. Además, obtuve 2 reseñas de clientes mencionando el \"cobro doble\" durante el periodo comprendido entre el 14/10/2026 y el 20/10/2026. [postmortem_pagos_2026-10.md#acciones, postmortem_pagos_2026-10.md#causa-raiz, postmortem_pagos_2026-10.md#impacto-en-clientes, postmortem_pagos_2026-10.md#resumen-del-incidente, resenas 2026-10-14/2026-10-20]"
+            },
+            {
+              "paso": 3,
+              "agente": "supervisor",
+              "resumen": "-> analista: Calcula el sentimiento y las métricas sobre las reseñas de los clientes afectados por el cobro doble entre el 14/10/2026 y el 20/10/2026. (Se cumple la documentación y la búsqueda inicial de reseñas (puntos 1 y 2), pero no se han calculado métricas sobre las opiniones de los clientes según el punto 3 de la rúbrica.)"
+            },
+            {
+              "paso": 4,
+              "agente": "analista",
+              "resumen": "El análisis de las 2 reseñas afectadas muestra una calificación promedio de 2.5 y un 50% de sentimiento negativo. La mitad de los clientes otorgó una calificación baja, reflejando el impacto directo del incidente en su experiencia. [6 métricas]"
+            },
+            {
+              "paso": 5,
+              "agente": "supervisor",
+              "resumen": "-> operador: Propón el envío de un cupón del 10% de descuento a los 312 clientes afectados por el cobro doble. (Ya se cuenta con la documentación, el análisis y las métricas, y se pide ejecutar una acción (mandar cupones) sin que exista aún una resultado_accion, por lo que corresponde delegar al operador según el punto 4 de la rúbrica.)"
+            },
+            {
+              "paso": 6,
+              "agente": "operador",
+              "resumen": "Propone: Enviar un cupón del 10% a 312 clientes a los que se les cobró dos veces durante el incidente de pagos del 14/10/2026 (costo estimado $212.160)"
+            },
+            {
+              "paso": 7,
+              "agente": "aprobacion",
+              "resumen": "Acción aprobada por Roger (revisión de prueba): Ok, es lo que pide el pedido."
+            },
+            {
+              "paso": 8,
+              "agente": "ejecutor",
+              "resumen": "Se enviaron 312 cupones del 10% (costo estimado $212.160), aprobados por Roger (revisión de prueba)."
+            },
+            {
+              "paso": 9,
+              "agente": "supervisor",
+              "resumen": "-> redactor: Redacta el informe final incluyendo los hallazgos del incidente, las métricas de las reseñas y el resultado de la acción de envío de cupones. (Ya se cuenta con la documentación, el análisis, las métricas y el resultado de la acción ejecutada, pero aún no se ha redactado el informe final según el punto 5 de la rúbrica.)"
+            },
+            {
+              "paso": 10,
+              "agente": "redactor",
+              "resumen": "Informe 'Informe del Incidente de Pagos del 14/10/2026' con 4 fuentes y 6 métricas citadas"
+            },
+            {
+              "paso": 11,
+              "agente": "validador",
+              "resumen": "Informe aprobado."
+            },
+            {
+              "paso": 12,
+              "agente": "supervisor",
+              "resumen": "-> FINALIZAR: El informe ya fue redactado y aprobado por el validador, y la accion fue ejecutada correctamente. (Se cumplen todos los puntos de la rubrica hasta el final y el informe esta aprobado, por lo que se debe finalizar.)"
+            }
+          ],
+          "turno": 1
+        },
+        "error": null,
+        "duracion_s": 126.282
+      },
+      "total_s": 142.34
+    },
+    {
+      "job_id": "f2c31970-fcbd-494f-8ec1-5ddceef86e75",
+      "conversacion_id": "34fb0b05-f04f-4b1b-ac37-f718b7e1872f",
+      "estado": "PENDING",
+      "consultar": "/tasks/f2c31970-fcbd-494f-8ec1-5ddceef86e75",
+      "prueba": "cupon_rechazado",
+      "pedido": "Compensá con un cupón del 5% a los clientes con el pedido demorado en el incidente de pagos.",
+      "post_ms": 33.3,
+      "decision": {
+        "aprobado": false,
+        "revisor": "Roger (revisión de prueba)",
+        "comentario": "Muy caro para este segmento: no lo apruebo."
+      },
+      "final": {
+        "id": "f2c31970-fcbd-494f-8ec1-5ddceef86e75",
+        "conversacion_id": "34fb0b05-f04f-4b1b-ac37-f718b7e1872f",
+        "pedido": "Compensá con un cupón del 5% a los clientes con el pedido demorado en el incidente de pagos.",
+        "estado": "DONE",
+        "creado": "2026-11-24T02:28:11.509",
+        "actualizado": "2026-11-24T02:31:39.458",
+        "worker": "worker-2",
+        "recorrido": [
+          "supervisor",
+          "investigador",
+          "supervisor",
+          "operador",
+          "aprobacion_humana",
+          "ejecutor",
+          "supervisor",
+          "redactor",
+          "validador",
+          "supervisor",
+          "redactor",
+          "validador",
+          "supervisor",
+          "analista",
+          "supervisor",
+          "redactor",
+          "validador",
+          "supervisor"
+        ],
+        "pregunta": null,
+        "decision": {
+          "aprobado": false,
+          "revisor": "Roger (revisión de prueba)",
+          "comentario": "Muy caro para este segmento: no lo apruebo."
+        },
+        "resultado": {
+          "informe": {
+            "titulo": "Informe del Incidente de Pagos del 14/10/2026",
+            "resumen": "El incidente por inestabilidad del proveedor de pagos afectó 1.240 pedidos y resultó en 312 cobros duplicados. La calificación promedio de los clientes durante el periodo fue 2,33, con un 66,67% de sentimientos negativos.",
+            "hallazgos": [
+              "La caída del proveedor externo generó 1.240 pedidos en estado procesando y 312 cobros duplicados debido a la falta de claves de idempotencia.",
+              "El impacto en la experiencia del cliente se reflejó en un sentimiento_negativo_pct[periodo_incidente] del 66,67% y un promedio[periodo_incidente] de 2,33 estrellas en las reseñas analizadas.",
+              "Los contactos a soporte se cuadruplicaron la semana posterior al incidente."
+            ],
+            "metricas_citadas": [
+              "sentimiento_negativo_pct[periodo_incidente]",
+              "promedio[periodo_incidente]",
+              "bajas_pct[periodo_incidente]"
+            ],
+            "fuentes": [
+              "postmortem_pagos_2026-10.md#resumen-del-incidente",
+              "postmortem_pagos_2026-10.md#causa-raiz",
+              "postmortem_pagos_2026-10.md#impacto-en-clientes",
+              "resenas 2026-10-14/2026-10-21"
+            ],
+            "recomendaciones": [
+              "Implementar claves de idempotencia en todos los cobros para evitar duplicados.",
+              "Deshabilitar el botón Pagar durante cobros en curso.",
+              "Reducir el umbral de alerta de errores de pago al 1% con una ventana de 2 minutos."
+            ],
+            "accion": "No se envió nada: la acción fue rechazada por Roger (revisión de prueba)."
+          },
+          "validado": true,
+          "observaciones": [],
+          "accion": {
+            "tipo": "enviar_cupones",
+            "segmento": "pedidos_demorados",
+            "porcentaje": 5,
+            "destinatarios": 1240,
+            "costo_estimado": 440200.0,
+            "descripcion": "Enviar un cupón del 5% a 1240 clientes cuyo pedido quedó en estado 'procesando' durante el incidente del 14/10/2026"
+          },
+          "resultado_accion": "No se envió nada: la acción fue rechazada por Roger (revisión de prueba).",
+          "aportes": [
+            {
+              "paso": 1,
+              "agente": "supervisor",
+              "resumen": "-> investigador: Busca en la base de conocimiento la documentación sobre el incidente de pagos y las reseñas de los clientes afectados para entender el contexto. (No hay documentación que explique el contexto del pedido, por lo que según la rúbrica (paso 1) se debe delegar al investigador.)"
+            },
+            {
+              "paso": 2,
+              "agente": "investigador",
+              "resumen": "Encontré el postmortem del incidente de pagos ocurrido el 14/10/2026, el cual detalla que 1.240 pedidos tuvieron demoras y 312 clientes fueron cobrados doblemente. En el período del 14/10 al 21/10/2026 se registraron 3 reseñas de clientes mencionando problemas con el pago. [postmortem_pagos_2026-10.md#resumen-del-incidente, postmortem_pagos_2026-10.md#causa-raiz, postmortem_pagos_2026-10.md#impacto-en-clientes, postmortem_pagos_2026-10.md#acciones, resenas 2026-10-14/2026-10-21]"
+            },
+            {
+              "paso": 3,
+              "agente": "supervisor",
+              "resumen": "-> operador: Propón enviar un cupón del 5% de descuento a los 1.240 clientes con el pedido demorado en el incidente de pagos del 14/10/2026. (Ya existe la documentación y el contexto del incidente, y el pedido requiere ejecutar una acción de compensación, por lo que según la rúbrica (paso 4) se debe delegar al operador.)"
+            },
+            {
+              "paso": 4,
+              "agente": "operador",
+              "resumen": "Propone: Enviar un cupón del 5% a 1240 clientes cuyo pedido quedó en estado 'procesando' durante el incidente del 14/10/2026 (costo estimado $440.200)"
+            },
+            {
+              "paso": 5,
+              "agente": "aprobacion",
+              "resumen": "Acción rechazada por Roger (revisión de prueba): Muy caro para este segmento: no lo apruebo."
+            },
+            {
+              "paso": 6,
+              "agente": "ejecutor",
+              "resumen": "No se envió nada: la acción fue rechazada por Roger (revisión de prueba)."
+            },
+            {
+              "paso": 7,
+              "agente": "supervisor",
+              "resumen": "-> redactor: Redacta el informe final indicando que el incidente de pagos ocurrió el 14/10/2026 afectando a 1.240 pedidos, y que la acción de enviar un cupón del 5% fue rechazada por Roger por considerarla costosa. (Ya existe documentación, se intentó realizar la acción y fue rechazada (hay un resultado_accion), por lo que según el paso 5 de la rúbrica corresponde redactar el informe.)"
+            },
+            {
+              "paso": 8,
+              "agente": "redactor",
+              "resumen": "Informe 'Informe del Incidente de Pagos del 14/10/2026' con 1 fuentes y 0 métricas citadas"
+            },
+            {
+              "paso": 9,
+              "agente": "validador",
+              "resumen": "Informe rechazado: El informe no cita ninguna fuente de tipo 'resenas'."
+            },
+            {
+              "paso": 10,
+              "agente": "supervisor",
+              "resumen": "-> redactor: Reescribi el informe final incluyendo las fuentes de tipo 'resenas' indicadas por el validador. (El validador rechazó el informe anterior porque no citaba fuentes de tipo 'resenas', por lo que según el paso 6 de la rúbrica se debe enviar al redactor con las observaciones.)"
+            },
+            {
+              "paso": 11,
+              "agente": "redactor",
+              "resumen": "Informe 'Informe de Incidente de Pagos del 14 de octubre de 2026' con 4 fuentes y 2 métricas citadas"
+            },
+            {
+              "paso": 12,
+              "agente": "validador",
+              "resumen": "Informe rechazado: La métrica 'tasa de errores 5xx' no existe en el estado. La métrica 'calificación media cruda' no existe en el estado."
+            },
+            {
+              "paso": 13,
+              "agente": "supervisor",
+              "resumen": "-> analista: Calcula métricas sobre las 3 reseñas del período del 14/10/2026 al 21/10/2026 para que el redactor pueda utilizarlas en el informe. (El redactor necesita métricas calculadas y válidas a partir de las reseñas para corregir los errores señalados por el validador.)"
+            },
+            {
+              "paso": 14,
+              "agente": "analista",
+              "resumen": "Durante el periodo del incidente, el 66.67% de las reseñas fueron negativas, con una calificación promedio de 2.33 estrellas y un 66.67% de valoraciones bajas (1 o 2 estrellas). No se registró ninguna reseña positiva en este grupo. [6 métricas]"
+            },
+            {
+              "paso": 15,
+              "agente": "supervisor",
+              "resumen": "-> redactor: Reescribi el informe final utilizando unicamente las metricas calculadas en el estado (como sentimiento_negativo_pct o promedio) y las fuentes de tipo resenas y documentos correctas, evitando mencionar metricas inexistentes. (El analista ya calculo las metricas necesarias. Segun la rubrica (paso 6), dado que el validador marco observaciones sobre el informe, se debe delegar nuevamente al redactor pasandole las correcciones solicitadas.)"
+            },
+            {
+              "paso": 16,
+              "agente": "redactor",
+              "resumen": "Informe 'Informe del Incidente de Pagos del 14/10/2026' con 4 fuentes y 3 métricas citadas"
+            },
+            {
+              "paso": 17,
+              "agente": "validador",
+              "resumen": "Informe aprobado."
+            },
+            {
+              "paso": 18,
+              "agente": "supervisor",
+              "resumen": "-> FINALIZAR: El informe ya fue validado con éxito y la acción fue rechazada y documentada, por lo que el proceso ha concluido. (Todo se cumple según la rúbrica (paso 7).)"
+            }
+          ],
+          "turno": 1
+        },
+        "error": null,
+        "duracion_s": 159.503
+      },
+      "total_s": 208.28
+    },
+    {
+      "job_id": "833718f7-31e6-4916-b9d1-3e281c5b96af",
+      "conversacion_id": "5ebdd318-41d2-46c9-8402-3b7bc308125f",
+      "estado": "PENDING",
+      "consultar": "/tasks/833718f7-31e6-4916-b9d1-3e281c5b96af",
+      "prueba": "cupon_automatico",
+      "pedido": "Mandá un cupón del 2% a los clientes con cobro doble.",
+      "post_ms": 43.9,
+      "final": {
+        "id": "833718f7-31e6-4916-b9d1-3e281c5b96af",
+        "conversacion_id": "5ebdd318-41d2-46c9-8402-3b7bc308125f",
+        "pedido": "Mandá un cupón del 2% a los clientes con cobro doble.",
+        "estado": "DONE",
+        "creado": "2026-11-24T02:28:11.511",
+        "actualizado": "2026-11-24T02:31:02.665",
+        "worker": "worker-1",
+        "recorrido": [
+          "supervisor",
+          "investigador",
+          "supervisor",
+          "analista",
+          "supervisor",
+          "operador",
+          "aprobacion_humana",
+          "ejecutor",
+          "supervisor",
+          "redactor",
+          "validador",
+          "supervisor"
+        ],
+        "pregunta": null,
+        "decision": null,
+        "resultado": {
+          "informe": {
+            "titulo": "Informe de gestión: compensación por doble cobro",
+            "resumen": "Se ejecutó el envío de un cupón del 2% a los 312 clientes afectados por el cobro duplicado durante el incidente del 14/10/2026. La acción fue completada para mitigar el impacto negativo en la experiencia de usuario identificado en los hallazgos del postmortem.",
+            "hallazgos": [
+              "312 clientes fueron cobrados dos veces debido a la falta de bloqueo en el botón 'Pagar' durante la caída del proveedor de pagos.",
+              "El incidente generó una caída en la calificación promedio de las reseñas del período, alcanzando un valor de 2.5.",
+              "La tasa de errores 5xx alcanzó un pico del 38% durante el incidente."
+            ],
+            "metricas_citadas": [
+              "cantidad[incidente_cobro_doble]",
+              "promedio[incidente_cobro_doble]",
+              "bajas_pct[incidente_cobro_doble]"
+            ],
+            "fuentes": [
+              "postmortem_pagos_2026-10.md#impacto-en-clientes",
+              "postmortem_pagos_2026-10.md#resumen-del-incidente",
+              "resenas 2026-10-14/2026-10-20"
+            ],
+            "recomendaciones": [
+              "Implementar claves de idempotencia en todos los cobros antes del 31/10/2026.",
+              "Deshabilitar el botón 'Pagar' mientras haya un cobro en curso, siguiendo la acción programada para el equipo de Checkout.",
+              "Bajar el umbral de alerta de errores de pagos al 1%."
+            ],
+            "accion": "Se enviaron 312 cupones del 2% (costo estimado $42.432), aprobados automáticamente por estar debajo del umbral."
+          },
+          "validado": true,
+          "observaciones": [],
+          "accion": {
+            "tipo": "enviar_cupones",
+            "segmento": "cobro_doble",
+            "porcentaje": 2,
+            "destinatarios": 312,
+            "costo_estimado": 42432.0,
+            "descripcion": "Enviar un cupón del 2% a 312 clientes a los que se les cobró dos veces durante el incidente de pagos del 14/10/2026"
+          },
+          "resultado_accion": "Se enviaron 312 cupones del 2% (costo estimado $42.432), aprobados automáticamente por estar debajo del umbral.",
+          "aportes": [
+            {
+              "paso": 1,
+              "agente": "supervisor",
+              "resumen": "-> investigador: Busca en la base de conocimiento documentación sobre el incidente de cobro doble y trae las reseñas de los clientes afectados. (No hay documentación que explique el contexto del pedido, por lo que se debe delegar al investigador según la regla 1 de la rúbrica.)"
+            },
+            {
+              "paso": 2,
+              "agente": "investigador",
+              "resumen": "Encontré el postmortem del incidente del 14/10/2026, donde 312 clientes sufrieron cobros dobles por la falta de claves de idempotencia. En el período del 14 al 20 de octubre de 2026, se registraron 2 reseñas relacionadas con este tema. [postmortem_pagos_2026-10.md#impacto-en-clientes, postmortem_pagos_2026-10.md#acciones, postmortem_pagos_2026-10.md#causa-raiz, postmortem_pagos_2026-10.md#resumen-del-incidente, resenas 2026-10-14/2026-10-20]"
+            },
+            {
+              "paso": 3,
+              "agente": "supervisor",
+              "resumen": "-> analista: Calcula métricas sobre las reseñas del período del 14/10/2026 al 20/10/2026 correspondientes al incidente de cobro doble. (Ya se cuenta con la documentación del contexto (regla 1 cumplida) y las reseñas, por lo que según la regla 3 se debe delegar al analista para que calcule las métricas necesarias antes de proceder con la acción o el informe.)"
+            },
+            {
+              "paso": 4,
+              "agente": "analista",
+              "resumen": "El incidente de cobro doble presenta una calificación promedio de 2.5 estrellas, con un 50% de reseñas negativas y un 50% de calificaciones bajas (1 o 2 estrellas). Se procede a enviar el cupón del 2% a los clientes afectados. [6 métricas]"
+            },
+            {
+              "paso": 5,
+              "agente": "supervisor",
+              "resumen": "-> operador: Propón el envío de un cupón del 2% de descuento para los 312 clientes afectados por el cobro doble entre el 14/10/2026 y el 20/10/2026. (Se cumple la regla 4 porque el pedido solicita ejecutar una acción (mandar un cupón) y todavía no hay resultado_accion ni acción propuesta.)"
+            },
+            {
+              "paso": 6,
+              "agente": "operador",
+              "resumen": "Propone: Enviar un cupón del 2% a 312 clientes a los que se les cobró dos veces durante el incidente de pagos del 14/10/2026 (costo estimado $42.432)"
+            },
+            {
+              "paso": 7,
+              "agente": "aprobacion",
+              "resumen": "Acción aprobada por automático: Costo $42.432, por debajo del umbral de $50.000."
+            },
+            {
+              "paso": 8,
+              "agente": "ejecutor",
+              "resumen": "Se enviaron 312 cupones del 2% (costo estimado $42.432), aprobados automáticamente por estar debajo del umbral."
+            },
+            {
+              "paso": 9,
+              "agente": "supervisor",
+              "resumen": "-> redactor: Redacta el informe final con los hallazgos, las métricas calculadas y el resultado de la acción de envío de cupones. (Se cumplen las reglas 1, 2, 3 y 4. Ya existe un resultado_accion, por lo que según la regla 5 se debe delegar al redactor para generar el informe final.)"
+            },
+            {
+              "paso": 10,
+              "agente": "redactor",
+              "resumen": "Informe 'Informe de gestión: compensación por doble cobro' con 3 fuentes y 3 métricas citadas"
+            },
+            {
+              "paso": 11,
+              "agente": "validador",
+              "resumen": "Informe aprobado."
+            },
+            {
+              "paso": 12,
+              "agente": "supervisor",
+              "resumen": "-> FINALIZAR: El flujo ha concluido exitosamente ya que el informe fue aprobado y la acción fue ejecutada. (Se cumple la regla 7 de la rúbrica: el informe fue redactado, validado sin observaciones y la acción se completó.)"
+            }
+          ],
+          "turno": 1
+        },
+        "error": null,
+        "duracion_s": 106.946
+      },
+      "total_s": 171.78
+    },
+    {
+      "job_id": "f5d69056-d069-4435-a45b-bde3bfb4b1df",
+      "conversacion_id": "90b5a76d-1f36-474f-9da4-5bf492f8e2f4",
+      "estado": "PENDING",
+      "consultar": "/tasks/f5d69056-d069-4435-a45b-bde3bfb4b1df",
+      "prueba": "conversacion_turno_1",
+      "pedido": "¿Qué pasó en el incidente de pagos de octubre y a cuántos clientes afectó?",
+      "post_ms": 9.8,
+      "final": {
+        "id": "f5d69056-d069-4435-a45b-bde3bfb4b1df",
+        "conversacion_id": "90b5a76d-1f36-474f-9da4-5bf492f8e2f4",
+        "pedido": "¿Qué pasó en el incidente de pagos de octubre y a cuántos clientes afectó?",
+        "estado": "DONE",
+        "creado": "2026-11-24T02:28:11.533",
+        "actualizado": "2026-11-24T02:30:19.116",
+        "worker": "worker-3",
+        "recorrido": [
+          "supervisor",
+          "investigador",
+          "supervisor",
+          "redactor",
+          "validador",
+          "supervisor"
+        ],
+        "pregunta": null,
+        "decision": null,
+        "resultado": {
+          "informe": {
+            "titulo": "Informe del Incidente de Pagos del 14/10/2026",
+            "resumen": "El incidente fue causado por la caída de un proveedor externo de pagos durante 3 horas y 15 minutos, provocando errores en el servicio. Un total de 312 clientes sufrieron cobros duplicados debido a la falta de claves de idempotencia y la demora en la activación del modo de cola.",
+            "hallazgos": [
+              "El incidente ocurrió entre las 19:40 y las 22:55 del 14/10/2026, alcanzando un pico de error del 38%.",
+              "La falta de claves de idempotencia y un umbral de alerta poco sensible permitieron que 312 clientes fueran cobrados dos veces antes de activar la contención.",
+              "Un total de 1.240 pedidos quedaron pendientes y las notificaciones de confirmación sufrieron demoras de hasta 6 horas."
+            ],
+            "metricas_citadas": [],
+            "fuentes": [
+              "postmortem_pagos_2026-10.md#resumen-del-incidente",
+              "postmortem_pagos_2026-10.md#causa-raiz",
+              "postmortem_pagos_2026-10.md#impacto-en-clientes"
+            ],
+            "recomendaciones": [
+              "Implementar claves de idempotencia en todos los cobros.",
+              "Deshabilitar el botón de pago mientras un proceso está en curso.",
+              "Ajustar el umbral de alertas de pagos al 1% durante 2 minutos.",
+              "Gestionar la comunicación y compensación mediante cupones para clientes afectados por cobros dobles."
+            ],
+            "accion": null
+          },
+          "validado": true,
+          "observaciones": [],
+          "accion": null,
+          "resultado_accion": null,
+          "aportes": [
+            {
+              "paso": 1,
+              "agente": "supervisor",
+              "resumen": "-> investigador: Busca en la base de conocimiento la documentación sobre el incidente de pagos de octubre para explicar qué pasó y a cuántos clientes afectó. (No hay documentación que explique el contexto del pedido, por lo que corresponde delegar al investigador según el punto 1 de la rúbrica.)"
+            },
+            {
+              "paso": 2,
+              "agente": "investigador",
+              "resumen": "El incidente ocurrió el 14/10/2026 debido a la caída de un proveedor externo de pagos que generó errores y tiempos de espera. El problema afectó a 1.240 pedidos que quedaron en espera y causó que 312 clientes fueran cobrados dos veces antes de habilitarse una medida de mitigación. [postmortem_pagos_2026-10.md#resumen-del-incidente, postmortem_pagos_2026-10.md#causa-raiz, postmortem_pagos_2026-10.md#impacto-en-clientes, postmortem_pagos_2026-10.md#acciones]"
+            },
+            {
+              "paso": 3,
+              "agente": "supervisor",
+              "resumen": "-> redactor: Redacta el informe final explicando qué pasó en el incidente de pagos del 14/10/2026 y a cuántos clientes afectó, basándote en la documentación aportada. (Ya se cuenta con la documentación que explica el contexto (punto 1 cumplido), el pedido no requiere analizar opiniones ni reseñas (punto 3 no aplica), no pide ejecutar ninguna acción como compensaciones (punto 4 no aplica), y falta el informe final (punto 5 no se cumple).)"
+            },
+            {
+              "paso": 4,
+              "agente": "redactor",
+              "resumen": "Informe 'Informe del Incidente de Pagos del 14/10/2026' con 3 fuentes y 0 métricas citadas"
+            },
+            {
+              "paso": 5,
+              "agente": "validador",
+              "resumen": "Informe aprobado."
+            },
+            {
+              "paso": 6,
+              "agente": "supervisor",
+              "resumen": "-> FINALIZAR: El informe ya fue redactado y aprobado por el validador, por lo que el proceso ha concluido. (Todo se cumple según el punto 7 de la rúbrica.)"
+            }
+          ],
+          "turno": 1
+        },
+        "error": null,
+        "duracion_s": 39.073
+      },
+      "total_s": 128.12
+    },
+    {
+      "job_id": "1febd3ca-831a-448d-8c10-090a0304b02f",
+      "conversacion_id": "90b5a76d-1f36-474f-9da4-5bf492f8e2f4",
+      "estado": "PENDING",
+      "consultar": "/tasks/1febd3ca-831a-448d-8c10-090a0304b02f",
+      "prueba": "conversacion_turno_2",
+      "pedido": "Mandales a los clientes con cobro doble el cupón que recomienda el postmortem.",
+      "post_ms": 7.0,
+      "decision": {
+        "aprobado": true,
+        "revisor": "Roger (revisión de prueba)",
+        "comentario": "Ok, es lo que pide el pedido."
+      },
+      "final": {
+        "id": "1febd3ca-831a-448d-8c10-090a0304b02f",
+        "conversacion_id": "90b5a76d-1f36-474f-9da4-5bf492f8e2f4",
+        "pedido": "Mandales a los clientes con cobro doble el cupón que recomienda el postmortem.",
+        "estado": "DONE",
+        "creado": "2026-11-24T02:30:19.667",
+        "actualizado": "2026-11-24T02:31:16.843",
+        "worker": "worker-3",
+        "recorrido": [
+          "supervisor",
+          "investigador",
+          "supervisor",
+          "operador",
+          "aprobacion_humana",
+          "ejecutor",
+          "supervisor",
+          "redactor",
+          "validador",
+          "supervisor"
+        ],
+        "pregunta": null,
+        "decision": {
+          "aprobado": true,
+          "revisor": "Roger (revisión de prueba)",
+          "comentario": "Ok, es lo que pide el pedido."
+        },
+        "resultado": {
+          "informe": {
+            "titulo": "Informe de compensación a clientes afectados por el incidente de pagos del 14/10/2026",
+            "resumen": "Se ha completado el envío de 312 cupones del 10% de descuento a los clientes que sufrieron cobros duplicados durante el incidente. Esta acción responde directamente a la recomendación de atención al cliente estipulada en el postmortem.",
+            "hallazgos": [
+              "Un total de 312 clientes sufrieron cobros duplicados debido a la falta de claves de idempotencia en el servicio de pagos.",
+              "El postmortem recomienda el envío de un email de disculpas con un cupón del 10% para los clientes afectados por el cobro doble.",
+              "La tasa de errores 5xx del servicio de pagos alcanzó un pico del 38% durante el incidente."
+            ],
+            "metricas_citadas": [],
+            "fuentes": [
+              "conversacion#turno-1",
+              "postmortem_pagos_2026-10.md#impacto-en-clientes",
+              "postmortem_pagos_2026-10.md#acciones",
+              "postmortem_pagos_2026-10.md#resumen-del-incidente"
+            ],
+            "recomendaciones": [
+              "Agregar claves de idempotencia a todos los cobros para evitar duplicados ante futuros errores.",
+              "Deshabilitar el botón Pagar mientras hay un cobro en curso para prevenir reintentos del usuario.",
+              "Bajar el umbral de alerta de pagos al 1% durante 2 minutos para reducir el tiempo de respuesta ante incidentes."
+            ],
+            "accion": "Se enviaron 312 cupones del 10% (costo estimado $212.160), aprobados por Roger (revisión de prueba)."
+          },
+          "validado": true,
+          "observaciones": [],
+          "accion": {
+            "tipo": "enviar_cupones",
+            "segmento": "cobro_doble",
+            "porcentaje": 10,
+            "destinatarios": 312,
+            "costo_estimado": 212160.0,
+            "descripcion": "Enviar un cupón del 10% a 312 clientes a los que se les cobró dos veces durante el incidente de pagos del 14/10/2026"
+          },
+          "resultado_accion": "Se enviaron 312 cupones del 10% (costo estimado $212.160), aprobados por Roger (revisión de prueba).",
+          "aportes": [
+            {
+              "paso": 1,
+              "agente": "supervisor",
+              "resumen": "-> investigador: Antes de proponer la acción, buscá en la documentación los datos que necesita (por ejemplo, qué cupón recomienda el postmortem). Pedido: Mandales a los clientes con cobro doble el cupón que recomienda el postmortem. (La acción usa un porcentaje que no sale del pedido ni de lo investigado: primero hay que buscarlo.)"
+            },
+            {
+              "paso": 2,
+              "agente": "investigador",
+              "resumen": "Encontré en el documento `postmortem_pagos_2026-10.md` que la acción recomendada es enviar un email de disculpas con un cupón del 10% a los 312 clientes afectados por el cobro doble. No existen otras recomendaciones de cupones en la documentación consultada. [postmortem_pagos_2026-10.md#acciones, postmortem_pagos_2026-10.md#impacto-en-clientes, postmortem_pagos_2026-10.md#causa-raiz, postmortem_pagos_2026-10.md#resumen-del-incidente]"
+            },
+            {
+              "paso": 3,
+              "agente": "supervisor",
+              "resumen": "-> operador: Propone enviar un cupón del 10% a los 312 clientes afectados por el cobro doble según el postmortem. (Ya se consultó la documentación y se encontró la recomendación, por lo que corresponde la regla 4 para que el operador proponga la acción con el segmento y porcentaje.)"
+            },
+            {
+              "paso": 4,
+              "agente": "operador",
+              "resumen": "Propone: Enviar un cupón del 10% a 312 clientes a los que se les cobró dos veces durante el incidente de pagos del 14/10/2026 (costo estimado $212.160)"
+            },
+            {
+              "paso": 5,
+              "agente": "aprobacion",
+              "resumen": "Acción aprobada por Roger (revisión de prueba): Ok, es lo que pide el pedido."
+            },
+            {
+              "paso": 6,
+              "agente": "ejecutor",
+              "resumen": "Se enviaron 312 cupones del 10% (costo estimado $212.160), aprobados por Roger (revisión de prueba)."
+            },
+            {
+              "paso": 7,
+              "agente": "supervisor",
+              "resumen": "-> redactor: Redacta el informe final detallando el envío de los 312 cupones del 10% a los clientes afectados por el cobro doble, incluyendo el resultado de la acción ejecutada. (Ya se cuenta con la documentación, la propuesta de acción y el resultado de la ejecución, por lo que según la regla 5 corresponde redactar el informe.)"
+            },
+            {
+              "paso": 8,
+              "agente": "redactor",
+              "resumen": "Informe 'Informe de compensación a clientes afectados por el incidente de pagos del 14/10/2026' con 4 fuentes y 0 métricas citadas"
+            },
+            {
+              "paso": 9,
+              "agente": "validador",
+              "resumen": "Informe aprobado."
+            },
+            {
+              "paso": 10,
+              "agente": "supervisor",
+              "resumen": "-> FINALIZAR: El informe ha sido aprobado y todo el flujo se ha completado exitosamente. (El informe ya fue redactado y aprobado por el validador sin observaciones, cumpliendo la regla 7 de la rúbrica.)"
+            }
+          ],
+          "turno": 2
+        },
+        "error": null,
+        "duracion_s": 43.403
+      },
+      "total_s": 57.83
+    }
+  ],
+  "conversacion": {
+    "conversacion_id": "90b5a76d-1f36-474f-9da4-5bf492f8e2f4",
+    "jobs": [
+      "f5d69056-d069-4435-a45b-bde3bfb4b1df",
+      "1febd3ca-831a-448d-8c10-090a0304b02f"
+    ],
+    "turnos": [
+      {
+        "referencia": "conversacion#turno-1",
+        "pedido": "¿Qué pasó en el incidente de pagos de octubre y a cuántos clientes afectó?",
+        "titulo": "Informe del Incidente de Pagos del 14/10/2026",
+        "resumen": "El incidente fue causado por la caída de un proveedor externo de pagos durante 3 horas y 15 minutos, provocando errores en el servicio. Un total de 312 clientes sufrieron cobros duplicados debido a la falta de claves de idempotencia y la demora en la activación del modo de cola.",
+        "accion": null
+      },
+      {
+        "referencia": "conversacion#turno-2",
+        "pedido": "Mandales a los clientes con cobro doble el cupón que recomienda el postmortem.",
+        "titulo": "Informe de compensación a clientes afectados por el incidente de pagos del 14/10/2026",
+        "resumen": "Se ha completado el envío de 312 cupones del 10% de descuento a los clientes que sufrieron cobros duplicados durante el incidente. Esta acción responde directamente a la recomendación de atención al cliente estipulada en el postmortem.",
+        "accion": "Se enviaron 312 cupones del 10% (costo estimado $212.160), aprobados por Roger (revisión de prueba)."
+      }
+    ]
+  }
+}

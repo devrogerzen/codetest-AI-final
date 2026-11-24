@@ -1,0 +1,332 @@
+{
+  "fecha": "2026-11-23T23:35:19",
+  "proyecto": "colibri-intelligence",
+  "trazas": 20,
+  "sesiones": 12,
+  "tokens": {
+    "total": 166678.0,
+    "prompt": 152829.0,
+    "completion": 13849.0
+  },
+  "costo_usd": {
+    "total": 0.0671279,
+    "prompt": 0.0419364,
+    "completion": 0.025191500000000002
+  },
+  "latencia_s": {
+    "p50": 24.91,
+    "p95": 107.2
+  },
+  "por_pedido": [
+    {
+      "job_id": "f2c31970-fcbd-494f-8ec1-5ddceef86e75",
+      "trazas": 2,
+      "costo_usd": 0.0113554,
+      "tokens": 28033.0,
+      "latencia_s": 159.47,
+      "aprobacion_humana": true
+    },
+    {
+      "job_id": "f7e0d950-b4a4-4109-95f5-b579885b51c8",
+      "trazas": 1,
+      "costo_usd": 0.00789755,
+      "tokens": 20392.0,
+      "latencia_s": 88.54,
+      "aprobacion_humana": false
+    },
+    {
+      "job_id": "c1e86f4e-f649-4d77-9c57-6709a2ca9137",
+      "trazas": 2,
+      "costo_usd": 0.0075107,
+      "tokens": 19187.0,
+      "latencia_s": 126.24,
+      "aprobacion_humana": true
+    },
+    {
+      "job_id": "f5d69056-d069-4435-a45b-bde3bfb4b1df",
+      "trazas": 1,
+      "costo_usd": 0.00356775,
+      "tokens": 8340.0,
+      "latencia_s": 39.06,
+      "aprobacion_humana": false
+    },
+    {
+      "job_id": "1febd3ca-831a-448d-8c10-090a0304b02f",
+      "trazas": 2,
+      "costo_usd": 0.0050460999999999995,
+      "tokens": 12418.0,
+      "latencia_s": 43.38,
+      "aprobacion_humana": true
+    },
+    {
+      "job_id": "833718f7-31e6-4916-b9d1-3e281c5b96af",
+      "trazas": 1,
+      "costo_usd": 0.00729055,
+      "tokens": 18858.0,
+      "latencia_s": 106.93,
+      "aprobacion_humana": false
+    },
+    {
+      "job_id": "d93a2585-ca7f-4be3-9caf-676118e719ec",
+      "trazas": 2,
+      "costo_usd": 0.00493735,
+      "tokens": 11781.0,
+      "latencia_s": 43.23,
+      "aprobacion_humana": true
+    },
+    {
+      "job_id": "69d9092b-da22-4fb2-a129-41fa0a30df06",
+      "trazas": 1,
+      "costo_usd": 0.00151285,
+      "tokens": 2895.0,
+      "latencia_s": 13.53,
+      "aprobacion_humana": false
+    },
+    {
+      "job_id": "0f8cf5fb-6a0c-4ccc-a2e5-eee1127675bd",
+      "trazas": 1,
+      "costo_usd": 0.0079644,
+      "tokens": 20369.0,
+      "latencia_s": 41.39,
+      "aprobacion_humana": false
+    },
+    {
+      "job_id": "5d2bfb0d-de0d-4f2e-828e-67928d3914ce",
+      "trazas": 2,
+      "costo_usd": 0.0073629,
+      "tokens": 18248.0,
+      "latencia_s": 58.79,
+      "aprobacion_humana": true
+    },
+    {
+      "job_id": "a1973582-aadc-419e-8e52-9c769838284d",
+      "trazas": 1,
+      "costo_usd": 0.0015671,
+      "tokens": 2931.0,
+      "latencia_s": 10.14,
+      "aprobacion_humana": false
+    }
+  ],
+  "por_traza": [
+    {
+      "traza": "9f35ac2c333323814b7f1fc08bb132b5",
+      "inicio": "2026-11-24T02:28:11.497460+00:00",
+      "raiz": "LangGraph",
+      "tipo": "iniciar",
+      "job_id": "f7e0d950-b4a4-4109-95f5-b579885b51c8",
+      "latencia_s": 88.54,
+      "spans": 90,
+      "tokens": 20392.0,
+      "costo_usd": 0.00789755
+    },
+    {
+      "traza": "64294b3b1d6574361913d939335e0ca0",
+      "inicio": "2026-11-24T02:28:11.677755+00:00",
+      "raiz": "LangGraph",
+      "tipo": "iniciar",
+      "job_id": "f2c31970-fcbd-494f-8ec1-5ddceef86e75",
+      "latencia_s": 64.04,
+      "spans": 57,
+      "tokens": 8035.0,
+      "costo_usd": 0.0028667000000000002
+    },
+    {
+      "traza": "2199be0eaa0944b1211ea4d6b758b6e4",
+      "inicio": "2026-11-24T02:28:11.678681+00:00",
+      "raiz": "LangGraph",
+      "tipo": "iniciar",
+      "job_id": "c1e86f4e-f649-4d77-9c57-6709a2ca9137",
+      "latencia_s": 112.31,
+      "spans": 81,
+      "tokens": 12052.0,
+      "costo_usd": 0.0044009
+    },
+    {
+      "traza": "f59a3525a499f35fe8fc3be0a8a4a921",
+      "inicio": "2026-11-24T02:29:15.728985+00:00",
+      "raiz": "LangGraph",
+      "tipo": "iniciar",
+      "job_id": "833718f7-31e6-4916-b9d1-3e281c5b96af",
+      "latencia_s": 106.93,
+      "spans": 100,
+      "tokens": 18858.0,
+      "costo_usd": 0.00729055
+    },
+    {
+      "traza": "88220ac958c9cfee701776d74eee0664",
+      "inicio": "2026-11-24T02:29:40.046815+00:00",
+      "raiz": "LangGraph",
+      "tipo": "iniciar",
+      "job_id": "f5d69056-d069-4435-a45b-bde3bfb4b1df",
+      "latencia_s": 39.06,
+      "spans": 44,
+      "tokens": 8340.0,
+      "costo_usd": 0.00356775
+    },
+    {
+      "traza": "5a6f053d74ad6aa4d93c1f993b84f484",
+      "inicio": "2026-11-24T02:30:04.019141+00:00",
+      "raiz": "LangGraph",
+      "tipo": "reanudar",
+      "job_id": "f2c31970-fcbd-494f-8ec1-5ddceef86e75",
+      "latencia_s": 95.43,
+      "spans": 69,
+      "tokens": 19998.0,
+      "costo_usd": 0.0084887
+    },
+    {
+      "traza": "c573ee6386d7d1637429ec23d1f8e8fb",
+      "inicio": "2026-11-24T02:30:19.119865+00:00",
+      "raiz": "LangGraph",
+      "tipo": "reanudar",
+      "job_id": "c1e86f4e-f649-4d77-9c57-6709a2ca9137",
+      "latencia_s": 13.93,
+      "spans": 21,
+      "tokens": 7135.0,
+      "costo_usd": 0.0031098000000000002
+    },
+    {
+      "traza": "59cb5842611cdb9dd881edde0abf1c36",
+      "inicio": "2026-11-24T02:30:33.056468+00:00",
+      "raiz": "LangGraph",
+      "tipo": "iniciar",
+      "job_id": "1febd3ca-831a-448d-8c10-090a0304b02f",
+      "latencia_s": 21.75,
+      "spans": 49,
+      "tokens": 6224.0,
+      "costo_usd": 0.0023516
+    },
+    {
+      "traza": "2c800f22c46d27eecac34c2d88b1314e",
+      "inicio": "2026-11-24T02:30:55.205464+00:00",
+      "raiz": "LangGraph",
+      "tipo": "reanudar",
+      "job_id": "1febd3ca-831a-448d-8c10-090a0304b02f",
+      "latencia_s": 21.63,
+      "spans": 21,
+      "tokens": 6194.0,
+      "costo_usd": 0.0026945
+    },
+    {
+      "traza": "67d79c762136964b87f469183e96d04f",
+      "inicio": "2026-11-24T02:31:41.391366+00:00",
+      "raiz": "LangGraph",
+      "tipo": "iniciar",
+      "job_id": "d93a2585-ca7f-4be3-9caf-676118e719ec",
+      "latencia_s": 15.16,
+      "spans": 49,
+      "tokens": 5954.0,
+      "costo_usd": 0.00229045
+    },
+    {
+      "traza": "57c1a0f3f67ba3a1962154cebd7aa7db",
+      "inicio": "2026-11-24T02:32:06.138821+00:00",
+      "raiz": "LangGraph",
+      "tipo": "reanudar",
+      "job_id": "d93a2585-ca7f-4be3-9caf-676118e719ec",
+      "latencia_s": 28.07,
+      "spans": 21,
+      "tokens": 5827.0,
+      "costo_usd": 0.0026469
+    },
+    {
+      "traza": "b564db8b1a727261ad573848c2bd6c65",
+      "inicio": "2026-11-24T02:32:34.326566+00:00",
+      "raiz": "LangGraph",
+      "tipo": "iniciar",
+      "job_id": "69d9092b-da22-4fb2-a129-41fa0a30df06",
+      "latencia_s": 13.53,
+      "spans": 19,
+      "tokens": 2895.0,
+      "costo_usd": 0.00151285
+    },
+    {
+      "traza": "baf4710338bf8d82265041a8669ff325",
+      "inicio": "2026-11-24T02:32:54.908994+00:00",
+      "raiz": "rag_respuesta",
+      "tipo": "ask",
+      "job_id": null,
+      "latencia_s": 6.71,
+      "spans": 19,
+      "tokens": 926.0,
+      "costo_usd": 0.000334
+    },
+    {
+      "traza": "ff2f1ea437e9d05126f7b22b43ab8dcf",
+      "inicio": "2026-11-24T02:33:01.629371+00:00",
+      "raiz": "rag_respuesta",
+      "tipo": "ask",
+      "job_id": null,
+      "latencia_s": 3.93,
+      "spans": 19,
+      "tokens": 707.0,
+      "costo_usd": 0.00028175
+    },
+    {
+      "traza": "f07d9c8e8867bb1f17944ce71e79abab",
+      "inicio": "2026-11-24T02:33:05.567281+00:00",
+      "raiz": "rag_respuesta",
+      "tipo": "ask",
+      "job_id": null,
+      "latencia_s": 4.15,
+      "spans": 19,
+      "tokens": 565.0,
+      "costo_usd": 0.00018375
+    },
+    {
+      "traza": "2280a5f0d0349b2e936d3a0c5c97ae33",
+      "inicio": "2026-11-24T02:33:09.753007+00:00",
+      "raiz": "rag_respuesta_stream",
+      "tipo": "ask_stream",
+      "job_id": null,
+      "latencia_s": 4.73,
+      "spans": 8,
+      "tokens": 1028.0,
+      "costo_usd": 0.00031574999999999995
+    },
+    {
+      "traza": "fc08c967f10189e4f066d0e144691658",
+      "inicio": "2026-11-24T02:33:14.507044+00:00",
+      "raiz": "LangGraph",
+      "tipo": "iniciar",
+      "job_id": "0f8cf5fb-6a0c-4ccc-a2e5-eee1127675bd",
+      "latencia_s": 41.39,
+      "spans": 90,
+      "tokens": 20369.0,
+      "costo_usd": 0.0079644
+    },
+    {
+      "traza": "877a3984d4bd72baef5f2e926e378652",
+      "inicio": "2026-11-24T02:33:56.793837+00:00",
+      "raiz": "LangGraph",
+      "tipo": "iniciar",
+      "job_id": "5d2bfb0d-de0d-4f2e-828e-67928d3914ce",
+      "latencia_s": 29.04,
+      "spans": 57,
+      "tokens": 8028.0,
+      "costo_usd": 0.0028603500000000002
+    },
+    {
+      "traza": "7813e8a8456541585bc86fad79f60e87",
+      "inicio": "2026-11-24T02:34:25.978824+00:00",
+      "raiz": "LangGraph",
+      "tipo": "reanudar",
+      "job_id": "5d2bfb0d-de0d-4f2e-828e-67928d3914ce",
+      "latencia_s": 29.75,
+      "spans": 33,
+      "tokens": 10220.0,
+      "costo_usd": 0.00450255
+    },
+    {
+      "traza": "e9334f1635fb8f97b5fa2518a98298b5",
+      "inicio": "2026-11-24T02:34:56.165013+00:00",
+      "raiz": "LangGraph",
+      "tipo": "iniciar",
+      "job_id": "a1973582-aadc-419e-8e52-9c769838284d",
+      "latencia_s": 10.14,
+      "spans": 19,
+      "tokens": 2931.0,
+      "costo_usd": 0.0015671
+    }
+  ]
+}
