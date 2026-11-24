@@ -122,7 +122,7 @@ async def responder_en_stream(buscador: BuscadorHibrido, llm: BaseChatModel, pre
     docs = await buscador.buscar(pregunta.pregunta, k=pregunta.k, categoria=pregunta.categoria)
     yield _evento("fuentes", [fuente(d).model_dump() for d in docs])
     texto = ""
-    cadena = (PROMPT_STREAM | llm | StrOutputParser()).with_config(run_name="rag_respuesta_stream")
+    cadena = (PROMPT_STREAM | llm | StrOutputParser()).with_config(run_name="generacion_stream")
     async for pedazo in cadena.astream({"contexto": formatear_contexto(docs), "pregunta": pregunta.pregunta}):
         texto += pedazo
         yield _evento("token", pedazo)

@@ -31,7 +31,7 @@ from pydantic import BaseModel, Field
 from app.config import (API_KEY, PHOENIX_ENDPOINT, PROYECTO_TRAZAS, SIN_API, TRAZAS_ACTIVAS, WORKERS,
                         nombre_coleccion, proveedor_embeddings, resumir_error)
 from app.jobs import ConversacionOcupada, EstadoJob, Job
-from app.observability import configurar_observabilidad, contexto_de_traza
+from app.observability import configurar_observabilidad, contexto_de_traza, span_raiz
 from app.rag.respuestas import Pregunta, RespuestaRAG, construir_cadena, responder_en_stream
 from app.state import DecisionHumana, Turno
 from app.worker import Recursos, correr_worker, recursos
@@ -119,7 +119,9 @@ def crear_app(fabrica_de_recursos: Callable[[], AbstractAsyncContextManager[Recu
         recursos_ = r(request)
 
         async def eventos() -> AsyncIterator[str]:
-            with contexto_de_traza(f"ask-{uuid.uuid4()}", "ask_stream"):
+            # Un solo span padre: la búsqueda y la generación quedan en la misma traza
+            with (contexto_de_traza(f"ask-{uuid.uuid4()}", "ask_stream"),
+                  span_raiz("rag_respuesta_stream", pregunta.pregunta)):
                 async for evento in responder_en_stream(recursos_.buscador, recursos_.asistente, pregunta):
                     yield evento
 

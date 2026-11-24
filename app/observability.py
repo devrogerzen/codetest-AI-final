@@ -15,12 +15,12 @@ from typing import Iterator
 from app.config import PHOENIX_ENDPOINT, PROMPT_VERSION, PROYECTO_TRAZAS, TRAZAS_ACTIVAS
 
 log = logging.getLogger("observabilidad")
-_configurado = False
+_tracer = None
 
 
 def configurar_observabilidad() -> None:
-    global _configurado
-    if _configurado or not TRAZAS_ACTIVAS:
+    global _tracer
+    if _tracer is not None or not TRAZAS_ACTIVAS:
         return
     from openinference.instrumentation.langchain import LangChainInstrumentor
     from phoenix.otel import register
@@ -29,8 +29,21 @@ def configurar_observabilidad() -> None:
     proveedor = register(project_name=PROYECTO_TRAZAS, endpoint=PHOENIX_ENDPOINT, batch=True,
                          set_global_tracer_provider=False, verbose=False)
     LangChainInstrumentor().instrument(tracer_provider=proveedor)
-    _configurado = True
+    _tracer = proveedor.get_tracer("colibri")
     log.info("Trazas hacia Phoenix: %s (proyecto %s)", PHOENIX_ENDPOINT, PROYECTO_TRAZAS)
+
+
+@contextmanager
+def span_raiz(nombre: str, entrada: str) -> Iterator[None]:
+    """Un span padre para operaciones que no son un único Runnable (el streaming: búsqueda + generación).
+    Sin esto, cada parte sería una traza suelta en Phoenix."""
+    if _tracer is None:
+        yield
+        return
+    from openinference.instrumentation import get_attributes_from_context
+    atributos = {"openinference.span.kind": "CHAIN", "input.value": entrada, **dict(get_attributes_from_context())}
+    with _tracer.start_as_current_span(nombre, attributes=atributos):
+        yield
 
 
 @contextmanager
