@@ -2,6 +2,7 @@
 pedidos y a un reinicio de la API."""
 from app.graph import crear_modelos
 from app.modelo_simulado import ModeloSimulado
+from app.state import DecisionSupervisor
 from tests.ayudas import ANALISIS, CUPON_10, SEGUIMIENTO, crear, esperar
 
 
@@ -39,6 +40,28 @@ async def test_dos_turnos_comparten_memoria(abrir_api):
     assert [t["pedido"] for t in respuesta["turnos"]] == [ANALISIS, SEGUIMIENTO]
     assert [t["referencia"] for t in respuesta["turnos"]] == ["conversacion#turno-1", "conversacion#turno-2"]
     assert respuesta["jobs"] == [primero["job_id"], segundo["job_id"]]
+
+
+class SupervisorQueRecuerdaMal(ModeloSimulado):
+    """Como Gemini en una corrida real: en el segundo turno no investiga y "recuerda" un porcentaje inventado."""
+    def _supervisor(self, estado: dict):
+        if estado["conversacion_previa"] and not estado["hallazgos"] and not estado["resultado_accion"]:
+            return DecisionSupervisor(siguiente="operador", motivo="Lo dice el postmortem.",
+                                      instruccion="Prepará un cupón del 20% a los clientes con cobro doble.")
+        return super()._supervisor(estado)
+
+
+async def test_un_dato_de_la_accion_se_verifica_antes_de_cotizarla(abrir_api):
+    modelos = crear_modelos(sin_api=True) | {"supervisor": SupervisorQueRecuerdaMal(rol="supervisor")}
+    async with abrir_api(modelos) as cliente:
+        primero = await crear(cliente, ANALISIS)
+        await esperar(cliente, primero["job_id"], {"DONE"})
+        segundo = await crear(cliente, "Mandales a los clientes con cobro doble el cupón que recomienda el postmortem.",
+                              primero["conversacion_id"])
+        job = await esperar(cliente, segundo["job_id"], {"WAITING_APPROVAL", "DONE", "FAILED"})
+    # El 20% no sale de ningún lado: antes de cotizar, el supervisor tiene que mandar a investigar
+    assert job["recorrido"][:2] == ["supervisor", "investigador"]
+    assert "20%" not in job["pregunta"]["pregunta"] and "10%" in job["pregunta"]["pregunta"]
 
 
 async def test_un_pedido_a_la_vez_por_conversacion(abrir_api):

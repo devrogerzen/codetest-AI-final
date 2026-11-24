@@ -52,7 +52,7 @@ PESO_BM25 = float(env("PESO_BM25", "0.5"))     # peso de BM25 en la fusión RRF;
 TRAZAS_ACTIVAS = env("TRAZAS", "1") == "1"
 PHOENIX_ENDPOINT = env("PHOENIX_COLLECTOR_ENDPOINT", "http://localhost:6006/v1/traces")
 PROYECTO_TRAZAS = env("PHOENIX_PROJECT_NAME", "colibri-intelligence")
-PROMPT_VERSION = "v2.3"              # viaja como metadata en cada traza: si cambia un prompt, se ve en Phoenix
+PROMPT_VERSION = "v2.4"              # viaja como metadata en cada traza: si cambia un prompt, se ve en Phoenix
 
 # --- Orquestador ---
 MAX_DELEGACIONES = int(env("MAX_DELEGACIONES", "8"))

@@ -51,6 +51,18 @@ def pide_accion(pedido: str) -> bool:
     return bool(ACCION.search(normalizar(pedido)))
 
 
+PORCENTAJE = re.compile(r"(\d+(?:[.,]\d+)?)\s*%")
+
+
+def porcentajes_sin_fundamento(instruccion: str, state: EstadoOrquestador) -> list[str]:
+    """Los porcentajes que el supervisor le pide al operador y que no salen del pedido, de lo investigado en
+    este turno ni de un turno anterior: un dato que el LLM "recordó" y nadie verificó."""
+    textos = [state["pedido"], *(h.contenido for h in state["hallazgos"]),
+              *(f"{t.resumen} {t.accion or ''}" for t in state.get("historial", []))]
+    conocidos = {p.replace(",", ".") for texto in textos for p in PORCENTAJE.findall(texto)}
+    return [p for p in PORCENTAJE.findall(instruccion) if p.replace(",", ".") not in conocidos]
+
+
 def contexto(state: EstadoOrquestador) -> dict:
     """Lo que ve el supervisor: un resumen del estado, no los mensajes internos de cada especialista."""
     return {
@@ -92,6 +104,14 @@ def crear_supervisor(modelo: BaseChatModel):
                 decision = DecisionSupervisor(
                     siguiente="redactor", motivo="La acción ya tiene una decisión humana: no se vuelve a proponer.",
                     instruccion="Escribí el informe e incluí en 'accion' el resultado de la acción tal como figura en el estado.")
+            elif (decision.siguiente == "operador" and porcentajes_sin_fundamento(decision.instruccion, state)
+                  and not any(h.tipo == "documento" for h in state["hallazgos"])):
+                # Los parámetros de una acción se verifican antes de cotizarla: primero se busca el dato
+                decision = DecisionSupervisor(
+                    siguiente="investigador",
+                    motivo="La acción usa un porcentaje que no sale del pedido ni de lo investigado: primero hay que buscarlo.",
+                    instruccion="Antes de proponer la acción, buscá en la documentación los datos que necesita (por ejemplo, "
+                                f"qué cupón recomienda el postmortem). Pedido: {state['pedido']}")
             elif decision.siguiente == "operador" and not pide_accion(state["pedido"]):
                 # Mínimo privilegio: si el pedido solo pregunta, ninguna acción sobre clientes, aunque el LLM la sugiera
                 decision = DecisionSupervisor(

@@ -49,14 +49,16 @@ TERMINALES = {"DONE", "FAILED"}
 REVISOR = "Roger (revisión de prueba)"
 
 
-def decidir(pedido: str) -> dict:
-    """Lo que haría un revisor con la acción que propone el agente para este pedido."""
+def decidir(pedido: str, pregunta: str) -> dict:
+    """Lo que haría un revisor atento con la acción que propone el agente para este pedido."""
     texto = pedido.lower()
     if "cupón" not in texto and "compens" not in texto:
         return {"aprobado": False, "revisor": REVISOR, "comentario": "Este pedido no pidió ninguna compensación."}
     if "demorado" in texto:
         return {"aprobado": False, "revisor": REVISOR, "comentario": "Muy caro para este segmento: no lo apruebo."}
-    return {"aprobado": True, "revisor": REVISOR, "comentario": "Ok, es lo que recomienda el postmortem."}
+    if "postmortem" in texto and "cupón del 10%" not in pregunta:
+        return {"aprobado": False, "revisor": REVISOR, "comentario": "El postmortem recomienda un cupón del 10%, no ese."}
+    return {"aprobado": True, "revisor": REVISOR, "comentario": "Ok, es lo que pide el pedido."}
 
 
 def percentil(valores: list[float], p: float) -> float:
@@ -106,7 +108,7 @@ async def seguir(cliente: httpx.AsyncClient, job: dict, limite_s: float) -> dict
         await asyncio.sleep(1)
         estado = (await cliente.get(f"/tasks/{job['job_id']}")).json()
         if estado["estado"] == "WAITING_APPROVAL":
-            decision = decidir(job["pedido"])
+            decision = decidir(job["pedido"], estado["pregunta"]["pregunta"])
             print(f"[{job['prueba']}] pide aprobación: {estado['pregunta']['pregunta']}")
             print(f"[{job['prueba']}] -> {'APRUEBO' if decision['aprobado'] else 'RECHAZO'}: {decision['comentario']}")
             job["decision"] = decision
