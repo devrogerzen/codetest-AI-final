@@ -52,7 +52,7 @@ PESO_BM25 = float(env("PESO_BM25", "0.5"))     # peso de BM25 en la fusión RRF;
 TRAZAS_ACTIVAS = env("TRAZAS", "1") == "1"
 PHOENIX_ENDPOINT = env("PHOENIX_COLLECTOR_ENDPOINT", "http://localhost:6006/v1/traces")
 PROYECTO_TRAZAS = env("PHOENIX_PROJECT_NAME", "colibri-intelligence")
-PROMPT_VERSION = "v2.0"              # viaja como metadata en cada traza: si cambia un prompt, se ve en Phoenix
+PROMPT_VERSION = "v2.3"              # viaja como metadata en cada traza: si cambia un prompt, se ve en Phoenix
 
 # --- Orquestador ---
 MAX_DELEGACIONES = int(env("MAX_DELEGACIONES", "8"))
@@ -65,6 +65,7 @@ UMBRAL_APROBACION = float(env("UMBRAL_APROBACION", "50000"))   # pesos
 
 LLM_MAX_RETRIES = int(env("LLM_MAX_RETRIES", "2"))   # reintentos ante 429/5xx (en planes gratis conviene subirlo)
 LLM_RPM = float(env("LLM_RPM", "0"))                 # tope de llamadas por minuto a cada modelo (0 = sin tope)
+EMBEDDINGS_RPM = int(env("EMBEDDINGS_RPM", "0"))     # tope de textos por minuto a embeddings (0 = sin tope)
 
 
 def resumir_error(e: Exception) -> str:
@@ -140,12 +141,17 @@ def crear_embeddings() -> Embeddings:
     if proveedor == "google":
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
         env("GOOGLE_API_KEY", requerida=True)
-        return GoogleGenerativeAIEmbeddings(model=env("EMBEDDINGS_MODEL", "gemini-embedding-001"))
-    if proveedor == "openai":
+        base = GoogleGenerativeAIEmbeddings(model=env("EMBEDDINGS_MODEL", "gemini-embedding-001"))
+    elif proveedor == "openai":
         from langchain_openai import OpenAIEmbeddings
         env("OPENAI_API_KEY", requerida=True)
-        return OpenAIEmbeddings(model=env("EMBEDDINGS_MODEL", "text-embedding-3-small"))
-    raise ValueError(f"EMBEDDINGS_PROVIDER no soportado: {proveedor!r} (usá local, google u openai)")
+        base = OpenAIEmbeddings(model=env("EMBEDDINGS_MODEL", "text-embedding-3-small"))
+    else:
+        raise ValueError(f"EMBEDDINGS_PROVIDER no soportado: {proveedor!r} (usá local, google u openai)")
+    if EMBEDDINGS_RPM:   # tope de textos por minuto (plan gratis de Gemini: 100)
+        from app.rag.limites import EmbeddingsConLimite
+        return EmbeddingsConLimite(base, EMBEDDINGS_RPM)
+    return base
 
 
 def nombre_embeddings(embeddings: Embeddings) -> str:

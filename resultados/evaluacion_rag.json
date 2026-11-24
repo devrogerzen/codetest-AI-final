@@ -1,0 +1,331 @@
+{
+  "fecha": "2026-11-23T22:28:10",
+  "embeddings": "google/gemini-embedding-001",
+  "k": 4,
+  "preguntas": 15,
+  "duracion_s": 63.5,
+  "resultados": [
+    {
+      "chunk_tokens": 400,
+      "fragmentos": 35,
+      "modo": "bm25",
+      "peso_bm25": null,
+      "recall": 0.967,
+      "precision": 0.317,
+      "mrr": 0.967
+    },
+    {
+      "chunk_tokens": 400,
+      "fragmentos": 35,
+      "modo": "vectorial",
+      "peso_bm25": null,
+      "recall": 0.967,
+      "precision": 0.317,
+      "mrr": 0.922
+    },
+    {
+      "chunk_tokens": 400,
+      "fragmentos": 35,
+      "modo": "hibrido",
+      "peso_bm25": 0.3,
+      "recall": 0.967,
+      "precision": 0.317,
+      "mrr": 0.933
+    },
+    {
+      "chunk_tokens": 400,
+      "fragmentos": 35,
+      "modo": "hibrido",
+      "peso_bm25": 0.5,
+      "recall": 0.967,
+      "precision": 0.317,
+      "mrr": 0.967
+    },
+    {
+      "chunk_tokens": 400,
+      "fragmentos": 35,
+      "modo": "hibrido",
+      "peso_bm25": 0.7,
+      "recall": 0.967,
+      "precision": 0.317,
+      "mrr": 0.967
+    },
+    {
+      "chunk_tokens": 120,
+      "fragmentos": 65,
+      "modo": "bm25",
+      "peso_bm25": null,
+      "recall": 0.933,
+      "precision": 0.3,
+      "mrr": 0.967
+    },
+    {
+      "chunk_tokens": 120,
+      "fragmentos": 65,
+      "modo": "vectorial",
+      "peso_bm25": null,
+      "recall": 0.933,
+      "precision": 0.3,
+      "mrr": 0.9
+    },
+    {
+      "chunk_tokens": 120,
+      "fragmentos": 65,
+      "modo": "hibrido",
+      "peso_bm25": 0.3,
+      "recall": 0.967,
+      "precision": 0.317,
+      "mrr": 0.9
+    },
+    {
+      "chunk_tokens": 120,
+      "fragmentos": 65,
+      "modo": "hibrido",
+      "peso_bm25": 0.5,
+      "recall": 0.967,
+      "precision": 0.317,
+      "mrr": 0.967
+    },
+    {
+      "chunk_tokens": 120,
+      "fragmentos": 65,
+      "modo": "hibrido",
+      "peso_bm25": 0.7,
+      "recall": 0.967,
+      "precision": 0.317,
+      "mrr": 0.967
+    }
+  ],
+  "detalle_configuracion_del_sistema": [
+    {
+      "pregunta": "¿Qué flag hay que activar cuando falla el proveedor de pagos?",
+      "esperados": [
+        "guia_incidentes.md#runbook-errores-5xx-en-pagos"
+      ],
+      "recuperados": [
+        "guia_incidentes.md#runbook-errores-5xx-en-pagos",
+        "postmortem_pagos_2026-10.md#resumen-del-incidente",
+        "postmortem_pagos_2026-10.md#causa-raiz",
+        "despliegue.md#feature-flags"
+      ],
+      "recall": 1.0,
+      "precision": 0.25,
+      "rr": 1.0
+    },
+    {
+      "pregunta": "¿Qué encabezado se usa para seguir una compra de punta a punta entre los servicios?",
+      "esperados": [
+        "arquitectura.md#observabilidad"
+      ],
+      "recuperados": [
+        "arquitectura.md#observabilidad",
+        "arquitectura.md#flujo-de-una-compra",
+        "arquitectura.md#servicios",
+        "postmortem_pagos_2026-10.md#impacto-en-clientes"
+      ],
+      "recall": 1.0,
+      "precision": 0.25,
+      "rr": 1.0
+    },
+    {
+      "pregunta": "¿Cada cuánto se rotan las credenciales del proveedor de pagos?",
+      "esperados": [
+        "seguridad.md#gestion-de-secretos"
+      ],
+      "recuperados": [
+        "seguridad.md#gestion-de-secretos",
+        "postmortem_pagos_2026-10.md#resumen-del-incidente",
+        "postmortem_pagos_2026-10.md#causa-raiz",
+        "faq.json#faq-05"
+      ],
+      "recall": 1.0,
+      "precision": 0.25,
+      "rr": 1.0
+    },
+    {
+      "pregunta": "¿Qué condiciones tiene que cumplir una versión canary para recibir todo el tráfico?",
+      "esperados": [
+        "despliegue.md#despliegue-canary"
+      ],
+      "recuperados": [
+        "despliegue.md#despliegue-canary",
+        "despliegue.md#ramas-y-revisiones",
+        "despliegue.md#rollback-manual",
+        "arquitectura.md#vision-general"
+      ],
+      "recall": 1.0,
+      "precision": 0.25,
+      "rr": 1.0
+    },
+    {
+      "pregunta": "¿Con qué comando se pasa Redis a la réplica?",
+      "esperados": [
+        "guia_incidentes.md#runbook-redis-caido-o-inaccesible"
+      ],
+      "recuperados": [
+        "guia_incidentes.md#runbook-redis-caido-o-inaccesible",
+        "arquitectura.md#datos",
+        "arquitectura.md#flujo-de-una-compra",
+        "seguridad.md#logs"
+      ],
+      "recall": 1.0,
+      "precision": 0.25,
+      "rr": 1.0
+    },
+    {
+      "pregunta": "Si alguien pega una contraseña en un chat, ¿qué hay que hacer?",
+      "esperados": [
+        "seguridad.md#gestion-de-secretos"
+      ],
+      "recuperados": [
+        "seguridad.md#gestion-de-secretos",
+        "seguridad.md#acceso-a-produccion",
+        "faq.json#faq-07",
+        "faq.json#faq-08"
+      ],
+      "recall": 1.0,
+      "precision": 0.25,
+      "rr": 1.0
+    },
+    {
+      "pregunta": "¿Puedo hacer un deploy un viernes?",
+      "esperados": [
+        "despliegue.md#ventanas-de-despliegue",
+        "faq.json#faq-06"
+      ],
+      "recuperados": [
+        "faq.json#faq-06",
+        "despliegue.md#ventanas-de-despliegue",
+        "despliegue.md#feature-flags",
+        "despliegue.md#migraciones-de-base-de-datos"
+      ],
+      "recall": 1.0,
+      "precision": 0.5,
+      "rr": 1.0
+    },
+    {
+      "pregunta": "¿Qué significa un error 429 del gateway?",
+      "esperados": [
+        "arquitectura.md#servicios",
+        "faq.json#faq-08"
+      ],
+      "recuperados": [
+        "faq.json#faq-08",
+        "arquitectura.md#servicios",
+        "postmortem_pagos_2026-10.md#causa-raiz",
+        "faq.json#faq-02"
+      ],
+      "recall": 1.0,
+      "precision": 0.5,
+      "rr": 1.0
+    },
+    {
+      "pregunta": "¿Cuánto tarda en actualizarse un precio en la tienda?",
+      "esperados": [
+        "arquitectura.md#datos",
+        "faq.json#faq-05"
+      ],
+      "recuperados": [
+        "faq.json#faq-05",
+        "arquitectura.md#vision-general",
+        "postmortem_pagos_2026-10.md#impacto-en-clientes",
+        "faq.json#faq-08"
+      ],
+      "recall": 0.5,
+      "precision": 0.25,
+      "rr": 1.0
+    },
+    {
+      "pregunta": "¿En cuántos días hay que presentar el postmortem de un incidente?",
+      "esperados": [
+        "guia_incidentes.md#postmortem"
+      ],
+      "recuperados": [
+        "guia_incidentes.md#postmortem",
+        "postmortem_pagos_2026-10.md#resumen-del-incidente",
+        "postmortem_pagos_2026-10.md#impacto-en-clientes",
+        "postmortem_pagos_2026-10.md#acciones"
+      ],
+      "recall": 1.0,
+      "precision": 0.25,
+      "rr": 1.0
+    },
+    {
+      "pregunta": "¿Cuántos clientes fueron cobrados dos veces durante la caída del proveedor de pagos?",
+      "esperados": [
+        "postmortem_pagos_2026-10.md#impacto-en-clientes"
+      ],
+      "recuperados": [
+        "postmortem_pagos_2026-10.md#impacto-en-clientes",
+        "postmortem_pagos_2026-10.md#causa-raiz",
+        "postmortem_pagos_2026-10.md#resumen-del-incidente",
+        "postmortem_pagos_2026-10.md#acciones"
+      ],
+      "recall": 1.0,
+      "precision": 0.25,
+      "rr": 1.0
+    },
+    {
+      "pregunta": "¿Por qué a algunos clientes se les cobró dos veces?",
+      "esperados": [
+        "postmortem_pagos_2026-10.md#causa-raiz",
+        "postmortem_pagos_2026-10.md#impacto-en-clientes"
+      ],
+      "recuperados": [
+        "postmortem_pagos_2026-10.md#impacto-en-clientes",
+        "postmortem_pagos_2026-10.md#acciones",
+        "postmortem_pagos_2026-10.md#causa-raiz",
+        "postmortem_pagos_2026-10.md#resumen-del-incidente"
+      ],
+      "recall": 1.0,
+      "precision": 0.5,
+      "rr": 1.0
+    },
+    {
+      "pregunta": "¿A qué hora se activó el modo cola de pagos en el incidente de octubre?",
+      "esperados": [
+        "postmortem_pagos_2026-10.md#resumen-del-incidente"
+      ],
+      "recuperados": [
+        "postmortem_pagos_2026-10.md#resumen-del-incidente",
+        "guia_incidentes.md#runbook-errores-5xx-en-pagos",
+        "postmortem_pagos_2026-10.md#impacto-en-clientes",
+        "postmortem_pagos_2026-10.md#causa-raiz"
+      ],
+      "recall": 1.0,
+      "precision": 0.25,
+      "rr": 1.0
+    },
+    {
+      "pregunta": "¿Qué equipo tiene que agregar claves de idempotencia y para cuándo?",
+      "esperados": [
+        "postmortem_pagos_2026-10.md#acciones"
+      ],
+      "recuperados": [
+        "postmortem_pagos_2026-10.md#acciones",
+        "postmortem_pagos_2026-10.md#causa-raiz",
+        "seguridad.md#vulnerabilidades",
+        "guia_incidentes.md#runbook-redis-caido-o-inaccesible"
+      ],
+      "recall": 1.0,
+      "precision": 0.25,
+      "rr": 1.0
+    },
+    {
+      "pregunta": "¿Qué severidad tiene un incidente de pagos?",
+      "esperados": [
+        "guia_incidentes.md#niveles-de-severidad",
+        "guia_incidentes.md#runbook-errores-5xx-en-pagos"
+      ],
+      "recuperados": [
+        "postmortem_pagos_2026-10.md#resumen-del-incidente",
+        "guia_incidentes.md#niveles-de-severidad",
+        "guia_incidentes.md#runbook-errores-5xx-en-pagos",
+        "seguridad.md#reporte-de-incidentes-de-seguridad"
+      ],
+      "recall": 1.0,
+      "precision": 0.5,
+      "rr": 0.5
+    }
+  ]
+}
