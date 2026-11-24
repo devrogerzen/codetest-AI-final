@@ -1,6 +1,10 @@
-# Infraestructura local: Redis (estado de los jobs + checkpoints de LangGraph) y Arize Phoenix (trazas).
-#   docker compose up -d            -> levanta redis y phoenix
-#   docker compose --profile api up -d --build   -> además levanta la API en un contenedor
+# Colibrí Intelligence: todo el sistema con una sola instrucción
+#
+#   docker compose up -d --build      (o ./run.sh, que además espera a que la API esté sana)
+#
+# Orden de arranque: redis + chroma + phoenix -> ingesta (corre una vez y termina) -> api + worker
+#   API y documentación:  http://localhost:8000/docs
+#   Trazas (Phoenix):     http://localhost:6006
 services:
   redis:
     # Redis Stack trae RedisJSON y RediSearch, que usa langgraph-checkpoint-redis para guardar los checkpoints
@@ -15,6 +19,18 @@ services:
       timeout: 3s
       retries: 10
 
+  chroma:
+    # La base vectorial como servidor: la ingesta escribe y la API y los workers leen de la misma colección.
+    # La versión coincide con la del cliente chromadb de requirements.txt.
+    image: chromadb/chroma:1.5.9
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma-data:/data
+    environment:
+      - IS_PERSISTENT=TRUE
+      - ANONYMIZED_TELEMETRY=FALSE
+
   phoenix:
     image: arizephoenix/phoenix:latest
     ports:
@@ -24,39 +40,55 @@ services:
       - phoenix-data:/mnt/data
     environment:
       - PHOENIX_WORKING_DIR=/mnt/data
-      # Phoenix 21 trae autenticación activada por defecto: en local la apagamos para que el colector
-      # acepte las trazas sin API key. En un despliegue real se deja activada y se usa PHOENIX_API_KEY.
+      # Phoenix trae autenticación activada por defecto: en local la apagamos para que el colector acepte
+      # las trazas sin API key. En un despliegue real se deja activada y se usa PHOENIX_API_KEY.
       - PHOENIX_ENABLE_AUTH=false
       - PHOENIX_TELEMETRY_ENABLED=false
 
+  ingesta:
+    # Sincroniza data/conocimiento con Chroma (incremental: si nada cambió, no gasta embeddings) y termina
+    build: .
+    command: ["python", "-m", "app.rag.ingesta"]
+    env_file: .env
+    environment: &servicios
+      REDIS_URL: redis://redis:6379
+      CHROMA_HOST: chroma
+      CHROMA_PORT: "8000"
+      PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:6006/v1/traces
+    depends_on:
+      chroma:
+        condition: service_started
+    restart: "no"
+
   api:
-    profiles: ["api"]
     build: .
     ports:
       - "8000:8000"
     env_file: .env
     environment:
-      - REDIS_URL=redis://redis:6379
-      - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
-      - WORKERS=0          # la API solo recibe pedidos; el trabajo lo hace el servicio worker
-    depends_on:
+      <<: *servicios
+      WORKERS: "0"          # la API solo recibe pedidos; el trabajo lo hace el servicio worker
+    depends_on: &dependencias
       redis:
         condition: service_healthy
       phoenix:
         condition: service_started
+      ingesta:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
 
   worker:
-    profiles: ["api"]
     build: .
     command: ["python", "-m", "app.worker", "--workers", "3"]
     env_file: .env
-    environment:
-      - REDIS_URL=redis://redis:6379
-      - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
-    depends_on:
-      redis:
-        condition: service_healthy
+    environment: *servicios
+    depends_on: *dependencias
 
 volumes:
   redis-data:
+  chroma-data:
   phoenix-data:

@@ -4,5 +4,9 @@ __pycache__/
 *.pyc
 *.log
 .git/
+chroma_db/
 screenshots/
 resultados/
+notebooks/
+tests/
+.pytest_cache/

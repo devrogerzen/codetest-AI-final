@@ -4,6 +4,9 @@ Guarda en los metadatos de la colección qué modelo de embeddings generó los v
 con otro modelo, falla con un mensaje claro: comparar vectores de dos modelos distintos no tiene sentido
 y el error, si no se controla, es silencioso (la búsqueda "funciona" pero trae cualquier cosa).
 """
+import logging
+import time
+
 import chromadb
 from chromadb.config import Settings
 from langchain_chroma import Chroma
@@ -11,17 +14,27 @@ from langchain_core.embeddings import Embeddings
 
 from app.config import CHROMA_DIR, CHROMA_HOST, CHROMA_PORT, nombre_coleccion, nombre_embeddings
 
+log = logging.getLogger("rag")
 
 class EmbeddingsIncompatibles(RuntimeError):
     pass
 
 
-def cliente_chroma() -> chromadb.ClientAPI:
+def cliente_chroma(espera_maxima: float = 60) -> chromadb.ClientAPI:
     ajustes = Settings(anonymized_telemetry=False)
-    if CHROMA_HOST:
-        return chromadb.HttpClient(host=CHROMA_HOST, port=CHROMA_PORT, settings=ajustes)
-    CHROMA_DIR.mkdir(parents=True, exist_ok=True)
-    return chromadb.PersistentClient(path=str(CHROMA_DIR), settings=ajustes)
+    if not CHROMA_HOST:
+        CHROMA_DIR.mkdir(parents=True, exist_ok=True)
+        return chromadb.PersistentClient(path=str(CHROMA_DIR), settings=ajustes)
+    # En docker-compose el servidor de Chroma puede tardar unos segundos en aceptar conexiones
+    limite = time.monotonic() + espera_maxima
+    while True:
+        try:
+            return chromadb.HttpClient(host=CHROMA_HOST, port=CHROMA_PORT, settings=ajustes)
+        except Exception as e:
+            if time.monotonic() > limite:
+                raise ConnectionError(f"Chroma no responde en {CHROMA_HOST}:{CHROMA_PORT}") from e
+            log.info("Esperando a Chroma en %s:%s...", CHROMA_HOST, CHROMA_PORT)
+            time.sleep(2)
 
 
 def abrir_almacen(embeddings: Embeddings, cliente: chromadb.ClientAPI | None = None,

@@ -1,0 +1,8 @@
+# Para correr los tests y el notebook de demo: pip install -r requirements-dev.txt
+-r requirements.txt
+pytest==9.2.0
+pytest-asyncio==1.5.0
+fakeredis==2.41.0
+nbclient>=0.10
+nbformat>=5.10
+ipykernel>=6.29
