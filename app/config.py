@@ -1,12 +1,14 @@
-"""Configuración: rutas, Redis, observabilidad, límites del orquestador y creación de los LLM.
+"""Configuración: rutas, Redis, RAG, observabilidad, límites del orquestador y creación de LLM y embeddings.
 
-Todo sale de variables de entorno (.env), así la misma imagen corre en local o en Docker.
+Todo sale de variables de entorno (.env): ningún modelo, colección ni URL está fijo en el código, así la
+misma imagen corre en local, en Docker o con otro proveedor sin tocar nada.
 """
 import os
 from functools import cache
 from pathlib import Path
 
 from dotenv import load_dotenv
+from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseChatModel
 
 load_dotenv()
@@ -15,6 +17,7 @@ BASE = Path(__file__).resolve().parent.parent
 CONOCIMIENTO = BASE / "data" / "conocimiento"
 RESENAS = BASE / "data" / "resenas.json"
 SEGMENTOS = BASE / "data" / "segmentos.json"
+GOLDEN_SET = BASE / "data" / "golden_set.json"
 
 
 def env(nombre: str, default: str | None = None, requerida: bool = False) -> str | None:
@@ -24,28 +27,42 @@ def env(nombre: str, default: str | None = None, requerida: bool = False) -> str
     return valor
 
 
-# --- Redis: cola de trabajos, estado de cada job y checkpoints de LangGraph ---
+SIN_API = env("SIN_API", "0") == "1"   # modelos simulados y embeddings locales: sin key y sin costo
+
+# --- Redis: cola de trabajos, estado de cada job, conversaciones y checkpoints de LangGraph ---
 REDIS_URL = env("REDIS_URL", "redis://localhost:6379")
 COLA = "colibri:cola"
 PREFIJO_JOB = "colibri:job:"
+PREFIJO_CONVERSACION = "colibri:conversacion:"
 ENVIOS = "colibri:envios"            # registro de las acciones ejecutadas (efecto "real" de la herramienta crítica)
 WORKERS = int(env("WORKERS", "3"))   # workers dentro del proceso de la API; 0 = correrlos aparte (python -m app.worker)
+API_KEY = env("API_KEY")             # si está definida, la API exige el header X-API-Key
+
+# --- RAG: base de conocimiento, fragmentos y base vectorial (ChromaDB) ---
+# Con CHROMA_HOST usa el servidor de Chroma (el de docker-compose); sin él, una carpeta local persistente.
+CHROMA_HOST = env("CHROMA_HOST")
+CHROMA_PORT = int(env("CHROMA_PORT", "8000"))
+CHROMA_DIR = Path(env("CHROMA_DIR", str(BASE / "chroma_db")))
+CHUNK_TOKENS = int(env("CHUNK_TOKENS", "400"))
+OVERLAP_TOKENS = int(env("OVERLAP_TOKENS", "40"))
+TOP_K = int(env("TOP_K", "4"))                  # fragmentos que devuelve el buscador (y k de las métricas)
+PESO_BM25 = float(env("PESO_BM25", "0.5"))     # peso de BM25 en la fusión RRF; los vectores pesan 1 - PESO_BM25
 
 # --- Observabilidad (Arize Phoenix vía OpenInference / OpenTelemetry) ---
 TRAZAS_ACTIVAS = env("TRAZAS", "1") == "1"
 PHOENIX_ENDPOINT = env("PHOENIX_COLLECTOR_ENDPOINT", "http://localhost:6006/v1/traces")
-PROYECTO_TRAZAS = env("PHOENIX_PROJECT_NAME", "colibri-orquestador")
-PROMPT_VERSION = "v1.1"              # viaja como metadata en cada traza: si cambia un prompt, se ve en Phoenix
+PROYECTO_TRAZAS = env("PHOENIX_PROJECT_NAME", "colibri-intelligence")
+PROMPT_VERSION = "v2.0"              # viaja como metadata en cada traza: si cambia un prompt, se ve en Phoenix
 
-# --- Orquestador (lo de la pre-entrega 6) ---
+# --- Orquestador ---
 MAX_DELEGACIONES = int(env("MAX_DELEGACIONES", "8"))
 RECURSION_LIMIT = 50
 RECURSION_LIMIT_ESPECIALISTA = 12
+TURNOS_DE_CONTEXTO = 3               # turnos anteriores de la conversación que ve el supervisor
 
 # --- Human-in-the-loop: una acción con costo estimado mayor a esto necesita aprobación humana ---
 UMBRAL_APROBACION = float(env("UMBRAL_APROBACION", "50000"))   # pesos
 
-SIN_API = env("SIN_API", "0") == "1"   # modelos simulados, sin key
 LLM_MAX_RETRIES = int(env("LLM_MAX_RETRIES", "2"))   # reintentos ante 429/5xx (en planes gratis conviene subirlo)
 LLM_RPM = float(env("LLM_RPM", "0"))                 # tope de llamadas por minuto a cada modelo (0 = sin tope)
 
@@ -68,9 +85,13 @@ def limitador(modelo: str):
     return InMemoryRateLimiter(requests_per_second=LLM_RPM / 60, check_every_n_seconds=0.1, max_bucket_size=1)
 
 
+def proveedor_llm() -> str:
+    return env("LLM_PROVIDER", "openai").lower()
+
+
 def crear_llm(rol: str) -> BaseChatModel:
-    """Un LLM por rol. El supervisor puede usar un modelo más capaz (SUPERVISOR_MODEL)."""
-    provider = env("LLM_PROVIDER", "openai").lower()
+    """Un LLM por rol (Factory). El supervisor puede usar un modelo más capaz (SUPERVISOR_MODEL)."""
+    provider = proveedor_llm()
     if provider == "openai":
         from langchain_openai import ChatOpenAI
         env("OPENAI_API_KEY", requerida=True)
@@ -104,3 +125,34 @@ def crear_llm(rol: str) -> BaseChatModel:
 
 def nombre_modelo(modelo: BaseChatModel) -> str:
     return getattr(modelo, "model_name", None) or getattr(modelo, "model", None) or modelo._llm_type
+
+
+def proveedor_embeddings() -> str:
+    """local (sin key), google u openai. Anthropic no tiene embeddings: con LLM_PROVIDER=anthropic hay que elegir otro."""
+    return env("EMBEDDINGS_PROVIDER", "local" if SIN_API else proveedor_llm()).lower()
+
+
+def crear_embeddings() -> Embeddings:
+    proveedor = proveedor_embeddings()
+    if proveedor == "local":
+        from app.rag.embeddings_locales import EmbeddingsLocales
+        return EmbeddingsLocales()
+    if proveedor == "google":
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
+        env("GOOGLE_API_KEY", requerida=True)
+        return GoogleGenerativeAIEmbeddings(model=env("EMBEDDINGS_MODEL", "gemini-embedding-001"))
+    if proveedor == "openai":
+        from langchain_openai import OpenAIEmbeddings
+        env("OPENAI_API_KEY", requerida=True)
+        return OpenAIEmbeddings(model=env("EMBEDDINGS_MODEL", "text-embedding-3-small"))
+    raise ValueError(f"EMBEDDINGS_PROVIDER no soportado: {proveedor!r} (usá local, google u openai)")
+
+
+def nombre_embeddings(embeddings: Embeddings) -> str:
+    modelo = getattr(embeddings, "model", None) or type(embeddings).__name__
+    return f"{proveedor_embeddings()}/{str(modelo).removeprefix('models/')}"
+
+
+def nombre_coleccion() -> str:
+    """Una colección por familia de embeddings: los vectores de dos modelos distintos no se pueden mezclar."""
+    return env("CHROMA_COLLECTION", "colibri-conocimiento" + ("-local" if proveedor_embeddings() == "local" else ""))

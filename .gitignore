@@ -4,3 +4,6 @@ venv/
 __pycache__/
 *.pyc
 *.log
+chroma_db/
+.pytest_cache/
+.ipynb_checkpoints/

@@ -1,0 +1,7 @@
+{
+  "arquitectura.md": {"categoria": "arquitectura", "etiquetas": ["microservicios", "datos", "observabilidad"]},
+  "guia_incidentes.md": {"categoria": "operaciones", "etiquetas": ["incidentes", "runbooks", "guardia"]},
+  "despliegue.md": {"categoria": "devops", "etiquetas": ["ci-cd", "canary", "feature-flags", "migraciones"]},
+  "seguridad.md": {"categoria": "seguridad", "etiquetas": ["secretos", "accesos", "datos-personales", "vulnerabilidades"]},
+  "postmortem_pagos_2026-10.md": {"categoria": "postmortems", "etiquetas": ["pagos", "incidente", "sev1", "clientes"], "fecha": "2026-10-14"}
+}
